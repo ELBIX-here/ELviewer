@@ -1,0 +1,17 @@
+/* EL Sans – ELviewer's reading typeface (see fonts/build_font.py). Hanja fall back to the system font. */
+@font-face {
+  font-family: "EL Sans";
+  src: url("../assets/fonts/ELSans-Regular.woff2") format("woff2");
+  font-weight: 100 549;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "EL Sans";
+  src: url("../assets/fonts/ELSans-Bold.woff2") format("woff2");
+  font-weight: 550 900;
+  font-style: normal;
+  font-display: block;
+}
+

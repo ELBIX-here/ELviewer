@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# TTS model files (~380 MB) – fetch with `node scripts/fetch_tts_model.mjs`
+models/
+src-tauri/target-alt/
+release/
+src-tauri/google_oauth.json
+google_oauth.json
+
+# Rust build output (all target dirs, e.g. target-desktop)
+src-tauri/target*/
+
+# Font build inputs/outputs (≈16 MB). Sources: Noto Sans KR from Google Fonts,
+# see README "글꼴"; the shipped woff2 files live in src/assets/fonts.
+fonts/source/*.ttf
+fonts/dist/
+
+# Local screenshots / scratch images in the project root
+/*.png
+
+# Claude Code per-user settings
+.claude/settings.local.json
+
+# Test coverage
+coverage/

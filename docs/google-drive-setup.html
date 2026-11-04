@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ELviewer Drive 설정</title>
+<meta name="description" content="ELviewer의 Google Drive 연동을 위해 Google Cloud에 앱을 등록하는 단계별 가이드">
+<style>
+  :root {
+    --bg: #f6f6f3;
+    --fg: #1f2328;
+    --muted: #5f6670;
+    --card: #ffffff;
+    --border: #dfe1e5;
+    --accent: #2f6fed;
+    --accent-soft: #e8f0fe;
+    --mark: #e5484d;
+    --mark-soft: rgba(229, 72, 77, 0.12);
+    --ok: #1a7f37;
+    --warn-bg: #fff6e0;
+    --warn-border: #f0c050;
+    --code-bg: #f0f1f3;
+    --shot-bg: #ffffff;
+    --shot-chrome: #f1f3f4;
+    --shot-side: #f8f9fa;
+    --shot-line: #e3e5e8;
+    --shot-text: #3c4043;
+    --shot-blue: #1a73e8;
+    --navy: #1c2640;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181b;
+      --fg: #dfe2e7;
+      --muted: #9aa1ab;
+      --card: #202226;
+      --border: #33363c;
+      --accent: #7aa7ff;
+      --accent-soft: #24304a;
+      --mark: #ff6b6f;
+      --mark-soft: rgba(255, 107, 111, 0.14);
+      --ok: #4ac26b;
+      --warn-bg: #2e2716;
+      --warn-border: #8a6d1f;
+      --code-bg: #2a2d32;
+      --shot-bg: #26282c;
+      --shot-chrome: #303237;
+      --shot-side: #2b2d31;
+      --shot-line: #3a3d43;
+      --shot-text: #d5d8dd;
+      --shot-blue: #8ab4f8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17181b;
+    --fg: #dfe2e7;
+    --muted: #9aa1ab;
+    --card: #202226;
+    --border: #33363c;
+    --accent: #7aa7ff;
+    --accent-soft: #24304a;
+    --mark: #ff6b6f;
+    --mark-soft: rgba(255, 107, 111, 0.14);
+    --ok: #4ac26b;
+    --warn-bg: #2e2716;
+    --warn-border: #8a6d1f;
+    --code-bg: #2a2d32;
+    --shot-bg: #26282c;
+    --shot-chrome: #303237;
+    --shot-side: #2b2d31;
+    --shot-line: #3a3d43;
+    --shot-text: #d5d8dd;
+    --shot-blue: #8ab4f8;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.7 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 16px 80px; }
+  header.top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  header.top svg { width: 44px; height: 44px; flex: none; }
+  h1 { font-size: 28px; line-height: 1.3; margin: 0; letter-spacing: -0.3px; }
+  .lead { color: var(--muted); margin: 6px 0 24px; }
+  h2 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.2px; display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: 17px; margin: 26px 0 6px; }
+  .num {
+    display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 15px; font-weight: 700; flex: none;
+  }
+  :root[data-theme="dark"] .num { color: #111; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .num { color: #111; } }
+  section.step {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 22px 18px; margin: 18px 0; scroll-margin-top: 16px;
+  }
+  section.step.done { border-color: var(--ok); }
+  section.step.done h2 .num { background: var(--ok); }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+  ol.do { padding-left: 22px; margin: 10px 0; }
+  ol.do li { margin: 6px 0; }
+  code, kbd {
+    font-family: "D2Coding", Consolas, ui-monospace, monospace; font-size: 0.9em;
+    background: var(--code-bg); padding: 1px 6px; border-radius: 5px; word-break: break-all;
+  }
+  b.ui { font-weight: 700; color: var(--accent); }
+  .note, .warn {
+    border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 15px;
+  }
+  .note { background: var(--accent-soft); }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); }
+  .check {
+    display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed var(--border); color: var(--muted); font-size: 14px; cursor: pointer; user-select: none;
+  }
+  .check input { width: 18px; height: 18px; accent-color: var(--ok); }
+
+  /* table of contents + progress */
+  nav.toc { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  nav.toc ol { margin: 6px 0 0; padding-left: 22px; columns: 2; column-gap: 28px; }
+  nav.toc a { color: var(--fg); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); }
+  nav.toc li.done a { color: var(--ok); }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--ok); transition: width 0.25s; }
+  .toc-head { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
+
+  /* copy fields */
+  .copy { display: flex; gap: 6px; align-items: stretch; margin: 6px 0; flex-wrap: wrap; }
+  .copy code { flex: 1 1 260px; padding: 8px 10px; display: flex; align-items: center; }
+  .copy button, .btn {
+    font: inherit; font-size: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card);
+    color: var(--fg); padding: 6px 12px; cursor: pointer;
+  }
+  .copy button:hover, .btn:hover { border-color: var(--accent); color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+
+  /* ----- illustrated console screens ----- */
+  figure.shot { margin: 16px 0 6px; }
+  figure.shot figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  figure.shot figcaption::before { content: "예시 화면 · "; font-weight: 600; }
+  .win {
+    border: 1px solid var(--shot-line); border-radius: 10px; overflow: hidden; background: var(--shot-bg);
+    color: var(--shot-text); font-size: 13px; line-height: 1.5; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.08);
+  }
+  .chrome { background: var(--shot-chrome); padding: 7px 10px; display: flex; align-items: center; gap: 8px; }
+  .chrome .dots { display: flex; gap: 5px; }
+  .chrome .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--shot-line); display: block; }
+  .chrome .url {
+    flex: 1; background: var(--shot-bg); border-radius: 12px; padding: 2px 10px; font-size: 12px;
+    color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .appbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--shot-line); flex-wrap: wrap;
+  }
+  .appbar .brand { font-weight: 700; }
+  .pill {
+    border: 1px solid var(--shot-line); border-radius: 6px; padding: 3px 10px; display: inline-flex; gap: 6px; align-items: center;
+  }
+  .search { flex: 1 1 140px; border: 1px solid var(--shot-line); border-radius: 6px; padding: 3px 10px; color: var(--muted); min-width: 0; }
+  .body { display: grid; grid-template-columns: 170px 1fr; min-height: 200px; }
+  .side { background: var(--shot-side); border-right: 1px solid var(--shot-line); padding: 10px 0; }
+  .side .h { font-size: 11px; color: var(--muted); padding: 4px 14px; text-transform: none; }
+  .side div.it { padding: 5px 14px; }
+  .side div.it.on { background: var(--accent-soft); color: var(--shot-blue); font-weight: 600; border-radius: 0 16px 16px 0; margin-right: 10px; }
+  .main { padding: 14px 16px; min-width: 0; }
+  .main .title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  .fbtn {
+    display: inline-block; border-radius: 6px; padding: 5px 12px; font-weight: 600; font-size: 12.5px;
+    border: 1px solid var(--shot-line); color: var(--shot-blue); background: transparent;
+  }
+  .fbtn.primary { background: var(--shot-blue); color: #fff; border-color: var(--shot-blue); }
+  :root[data-theme="dark"] .fbtn.primary { color: #111; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fbtn.primary { color: #111; } }
+  .field { margin: 10px 0; }
+  .field label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 3px; }
+  .input {
+    border: 1px solid var(--shot-line); border-radius: 6px; padding: 6px 10px; min-height: 31px; background: var(--shot-bg);
+    overflow-wrap: anywhere;
+  }
+  .input.sel::after { content: " ▾"; float: right; color: var(--muted); }
+  .card2 { border: 1px solid var(--shot-line); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+  .radio { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+  .radio i { width: 14px; height: 14px; border: 2px solid var(--muted); border-radius: 50%; margin-top: 3px; flex: none; }
+  .radio.on i { border-color: var(--shot-blue); box-shadow: inset 0 0 0 3px var(--shot-bg); background: var(--shot-blue); }
+  .cb { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--shot-line); }
+  .cb i { width: 14px; height: 14px; border: 2px solid var(--muted); border-radius: 3px; flex: none; }
+  .cb.on i { background: var(--shot-blue); border-color: var(--shot-blue); }
+  .cb span.s { color: var(--muted); font-size: 12px; }
+  .dialog {
+    border: 1px solid var(--shot-line); border-radius: 10px; padding: 14px; background: var(--shot-bg);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18); max-width: 420px; margin: 8px auto;
+  }
+  .dim { background: rgba(0, 0, 0, 0.18); padding: 18px 10px; }
+  .muted { color: var(--muted); }
+  .chip { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--accent-soft); color: var(--shot-blue); }
+
+  /* the red "click here" marks */
+  .hl { position: relative; outline: 2.5px solid var(--mark); outline-offset: 2px; border-radius: 6px; background: var(--mark-soft); }
+  .hl[data-n]::after {
+    content: attr(data-n); position: absolute; top: -12px; right: -12px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--mark); color: #fff; font: 700 11px/20px system-ui, sans-serif; text-align: center; z-index: 1;
+  }
+
+  /* file tree */
+  pre.tree {
+    background: var(--code-bg); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: 13.5px; line-height: 1.6;
+    font-family: "D2Coding", Consolas, ui-monospace, monospace;
+  }
+  pre.tree .new { color: var(--ok); font-weight: 700; }
+
+  /* ELviewer mini screens */
+  .elv { background: #1c1d20; color: #d5d7dc; border-radius: 10px; padding: 12px; font-size: 13px; max-width: 300px; }
+  .elv .box { border: 1px solid #33363c; border-radius: 10px; padding: 10px; background: #26282c; }
+  .elv .b { border-radius: 8px; padding: 6px 10px; display: inline-block; margin-top: 6px; }
+  .elv .sub { color: #9aa1ab; font-size: 12px; }
+
+  footer { color: var(--muted); font-size: 13px; margin-top: 34px; text-align: center; }
+  .theme { float: right; }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 23px; }
+    section.step { padding: 18px 14px 14px; }
+    nav.toc ol { columns: 1; }
+    .body { grid-template-columns: 1fr; }
+    .side { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<button class="btn theme" id="themeBtn" type="button">테마</button>
+<header class="top">
+  <svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="114" fill="#1C2640"/><rect x="108" y="100" width="296" height="24" rx="12" fill="#C9822A"/><rect x="108" y="388" width="296" height="24" rx="12" fill="#C9822A"/><path d="M256 252 L136 132 Q194 122 256 150 Z" fill="#F3EAD8"/><path d="M256 252 L376 132 Q318 122 256 150 Z" fill="#DCCFB6"/><path d="M256 252 L214 210 Q236 220 256 222 Q276 220 298 210 Z" fill="#E8A23C"/><rect x="253" y="246" width="6" height="114" rx="3" fill="#E8A23C"/><path d="M256 260 L136 380 Q194 390 256 362 Z" fill="#F3EAD8"/><path d="M256 260 L376 380 Q318 390 256 362 Z" fill="#DCCFB6"/><path d="M192 384 Q256 326 320 384 Z" fill="#E8A23C"/></svg>
+  <h1>ELviewer · Google Drive 연동 설정 가이드</h1>
+</header>
+<p class="lead">
+  ELviewer에 "Google 계정 연결"을 넣으려면 <b>개발자(배포하는 사람)가 Google Cloud에 앱을 한 번 등록</b>해야 합니다.
+  처음이면 15~20분 정도 걸립니다. 각 단계를 마치면 아래의 체크 표시를 눌러 두세요(이 브라우저에만 저장됩니다).
+</p>
+
+<div class="note">
+  <b>누가 하는 작업인가요?</b> 이 가이드는 <b>개발자가 딱 한 번</b> 하는 작업입니다. 앱을 쓰는 사람들은 Google Cloud를 볼 일이 없고,
+  앱에서 <b>Google 계정 연결</b>을 눌러 <b>각자 자기 Google 계정</b>으로 로그인하면 끝입니다. 유저마다 자기 드라이브의 폴더를 읽고, 자기 계정에 동기화됩니다.
+  <br><br>
+  <b>무료 조건</b> — 이 방식(Drive 폴더 통째로 읽기)은 Google 심사 없이 <b>최대 100명</b>까지 무료로 쓸 수 있습니다.
+  첫 로그인 때 "Google에서 확인하지 않은 앱" 경고가 한 번 나오고, 유저가 <b>고급 → ELviewer(으)로 이동</b>을 누르면 됩니다(7단계 그림 참고).
+  100명을 넘기려면 Google 앱 확인과 보안 심사(유료)가 필요합니다.
+</div>
+
+<div class="warn">
+  <b>그림 안내</b> — 이 문서의 화면 그림은 메뉴 위치를 설명하기 위해 단순하게 다시 그린 <b>예시</b>입니다. 실제 Google Cloud 콘솔은 디자인이나 메뉴 이름이
+  조금 다를 수 있습니다(예: "OAuth 동의 화면" ↔ "Google 인증 플랫폼", "사용자 인증 정보" ↔ "클라이언트"). <span style="color:var(--mark);font-weight:700">빨간 테두리와 번호</span>가 누르거나 입력할 곳입니다.
+</div>
+
+<nav class="toc" aria-label="목차">
+  <div class="toc-head"><b>진행 순서</b><span id="progressText">0 / 7 완료</span></div>
+  <ol id="tocList">
+    <li><a href="#s1">프로젝트 만들기</a></li>
+    <li><a href="#s2">Google Drive API 켜기</a></li>
+    <li><a href="#s3">동의 화면: 앱 정보·대상</a></li>
+    <li><a href="#s4">동의 화면: 권한 범위·게시</a></li>
+    <li><a href="#s5">PC용 클라이언트 + JSON</a></li>
+    <li><a href="#s6">Android용 클라이언트</a></li>
+    <li><a href="#s7">ELviewer에서 연결</a></li>
+  </ol>
+  <div class="bar"><i id="progressBar"></i></div>
+</nav>
+
+<!-- ============================================================ 1 -->
+<section class="step" id="s1" data-step="1">
+  <h2><span class="num">1</span>프로젝트 만들기</h2>
+  <div class="meta">약 1분 · 앱을 담을 "그릇"을 만듭니다</div>
+  <ol class="do">
+    <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>에 개발자 Google 계정으로 로그인합니다. (앱을 쓰는 사람의 계정과 상관없습니다) 처음이면 약관 동의 창이 뜹니다.</li>
+    <li>위쪽 막대의 <b class="ui">프로젝트 선택</b> 단추 → 창 오른쪽 위 <b class="ui">새 프로젝트</b>.</li>
+    <li>프로젝트 이름에 <code>ELviewer</code> → <b class="ui">만들기</b>. 몇 초 뒤 알림이 뜨면 <b class="ui">프로젝트 선택</b>을 눌러 이 프로젝트로 전환합니다.</li>
+  </ol>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com</span></div>
+      <div class="appbar"><span class="brand">Google Cloud</span><span class="pill hl" data-n="1">프로젝트 선택 ▾</span><span class="search">검색</span></div>
+      <div class="dim">
+        <div class="dialog">
+          <div class="row" style="justify-content:space-between"><b>프로젝트 선택</b><span class="fbtn hl" data-n="2">새 프로젝트</span></div>
+          <div class="search" style="margin:8px 0">프로젝트 및 폴더 검색</div>
+          <div class="muted">최근 · 별표표시 · 전체</div>
+        </div>
+      </div>
+    </div>
+    <figcaption>프로젝트 선택 창에서 "새 프로젝트"</figcaption>
+  </figure>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/projectcreate</span></div>
+      <div class="main">
+        <div class="title">새 프로젝트</div>
+        <div class="field"><label>프로젝트 이름 *</label><div class="input hl" data-n="3">ELviewer</div></div>
+        <div class="field"><label>위치</label><div class="input muted">조직 없음</div></div>
+        <div class="row"><span class="fbtn primary hl" data-n="4">만들기</span><span class="fbtn">취소</span></div>
+      </div>
+    </div>
+    <figcaption>이름만 넣고 만들기 (위치는 그대로)</figcaption>
+  </figure>
+  <label class="check"><input type="checkbox"> 프로젝트를 만들고 그 프로젝트로 전환했습니다</label>
+</section>
+
+<!-- ============================================================ 2 -->
+<section class="step" id="s2" data-step="2">
+  <h2><span class="num">2</span>Google Drive API 켜기</h2>
+  <div class="meta">약 1분</div>
+  <ol class="do">
+    <li>왼쪽 위 ☰ 메뉴 → <b class="ui">API 및 서비스</b> → <b class="ui">라이브러리</b>. (또는 위쪽 검색창에 "Google Drive API")</li>
+    <li><code>Google Drive API</code>를 검색해서 열고 <b class="ui">사용</b>을 누릅니다.</li>
+  </ol>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/apis/library</span></div>
+      <div class="appbar"><span class="brand">Google Cloud</span><span class="pill">ELviewer ▾</span><span class="search">검색</span></div>
+      <div class="body">
+        <div class="side">
+          <div class="h">API 및 서비스</div>
+          <div class="it">사용 설정된 API 및 서비스</div>
+          <div class="it on">라이브러리</div>
+          <div class="it">사용자 인증 정보</div>
+          <div class="it">OAuth 동의 화면</div>
+        </div>
+        <div class="main">
+          <div class="title">API 라이브러리</div>
+          <div class="input hl" data-n="1">Google Drive API</div>
+          <div class="card2 row" style="justify-content:space-between">
+            <div><b>Google Drive API</b><div class="muted">Google Enterprise API</div></div>
+            <span class="fbtn primary hl" data-n="2">사용</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>라이브러리에서 Drive API를 찾아 "사용"</figcaption>
+  </figure>
+  <div class="note">이미 켜져 있으면 "사용" 대신 "관리" 단추가 보입니다. 그 상태면 다음 단계로 넘어가세요.</div>
+  <label class="check"><input type="checkbox"> Google Drive API를 사용으로 바꿨습니다</label>
+</section>
+
+<!-- ============================================================ 3 -->
+<section class="step" id="s3" data-step="3">
+  <h2><span class="num">3</span>동의 화면: 앱 정보와 대상</h2>
+  <div class="meta">약 3분 · 로그인할 때 보이는 "ELviewer가 권한을 요청합니다" 화면을 만듭니다</div>
+  <ol class="do">
+    <li>☰ → <b class="ui">API 및 서비스</b> → <b class="ui">OAuth 동의 화면</b>. 새 콘솔에서는 <b class="ui">Google 인증 플랫폼</b> 개요가 열리고 <b class="ui">시작하기</b> 단추가 있습니다.</li>
+    <li><b>앱 정보</b>: 앱 이름 <code>ELviewer</code>, 사용자 지원 이메일은 본인 메일 선택.</li>
+    <li><b>대상</b>: <b class="ui">외부</b> 선택. (개인 Gmail 계정은 "내부"를 고를 수 없습니다)</li>
+    <li><b>연락처 정보</b>: 본인 메일 → 사용자 데이터 정책 동의 → <b class="ui">만들기</b>.</li>
+  </ol>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/auth/overview/create</span></div>
+      <div class="body">
+        <div class="side">
+          <div class="h">Google 인증 플랫폼</div>
+          <div class="it on">개요</div>
+          <div class="it">브랜딩</div>
+          <div class="it">대상</div>
+          <div class="it">클라이언트</div>
+          <div class="it">데이터 액세스</div>
+        </div>
+        <div class="main">
+          <div class="title">프로젝트 구성</div>
+          <div class="muted">① 앱 정보</div>
+          <div class="field"><label>앱 이름 *</label><div class="input hl" data-n="1">ELviewer</div></div>
+          <div class="field"><label>사용자 지원 이메일 *</label><div class="input sel hl" data-n="2">me@gmail.com</div></div>
+          <div class="muted" style="margin-top:12px">② 대상</div>
+          <div class="radio"><i></i><div><b>내부</b> <span class="muted">조직 사용자만</span></div></div>
+          <div class="radio on hl" data-n="3"><i></i><div><b>외부</b> <span class="muted">Google 계정이 있는 테스트 사용자</span></div></div>
+          <div class="muted" style="margin-top:12px">③ 연락처 정보 · ④ 완료</div>
+          <div class="row"><span class="fbtn primary hl" data-n="4">만들기</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>새 콘솔의 "프로젝트 구성" 마법사 (옛 화면은 같은 항목이 여러 페이지로 나뉘어 있습니다)</figcaption>
+  </figure>
+  <label class="check"><input type="checkbox"> 앱 이름 ELviewer, 대상 "외부"로 동의 화면을 만들었습니다</label>
+</section>
+
+<!-- ============================================================ 4 -->
+<section class="step" id="s4" data-step="4">
+  <h2><span class="num">4</span>동의 화면: 권한 범위와 게시</h2>
+  <div class="meta">약 3분 · ELviewer가 요청할 권한 두 가지를 등록하고, 로그인이 7일마다 풀리지 않게 게시합니다</div>
+
+  <h3>4-1. 권한 범위(scope) 추가</h3>
+  <ol class="do">
+    <li>왼쪽 <b class="ui">데이터 액세스</b>(옛 화면: 동의 화면 편집 → <b class="ui">범위</b>) → <b class="ui">범위 추가 또는 삭제</b>.</li>
+    <li>창 아래쪽 <b class="ui">직접 범위 추가</b> 칸에 아래 두 줄을 붙여 넣고 <b class="ui">테이블에 추가</b> → 두 항목이 체크된 상태로 <b class="ui">업데이트</b> → <b class="ui">저장</b>.</li>
+  </ol>
+  <div class="copy"><code>https://www.googleapis.com/auth/drive.readonly</code><button type="button" data-copy="https://www.googleapis.com/auth/drive.readonly">복사</button></div>
+  <div class="copy"><code>https://www.googleapis.com/auth/drive.appdata</code><button type="button" data-copy="https://www.googleapis.com/auth/drive.appdata">복사</button></div>
+  <div class="copy"><code>두 줄 한 번에</code><button type="button" data-copy="https://www.googleapis.com/auth/drive.readonly&#10;https://www.googleapis.com/auth/drive.appdata">둘 다 복사</button></div>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/auth/scopes</span></div>
+      <div class="dim">
+        <div class="dialog" style="max-width:520px">
+          <b>선택한 범위 업데이트</b>
+          <div class="cb on"><i></i><div>…/auth/drive.readonly <span class="s">Google Drive 파일 보기 및 다운로드</span></div></div>
+          <div class="cb on"><i></i><div>…/auth/drive.appdata <span class="s">Google Drive의 앱 구성 데이터 보기 및 관리</span></div></div>
+          <div class="field"><label>직접 범위 추가</label><div class="input hl" data-n="1" style="min-height:52px">https://www.googleapis.com/auth/drive.readonly<br>https://www.googleapis.com/auth/drive.appdata</div></div>
+          <div class="row"><span class="fbtn hl" data-n="2">테이블에 추가</span><span style="flex:1"></span><span class="fbtn primary hl" data-n="3">업데이트</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>목록에서 찾기보다 "직접 범위 추가"에 붙여 넣는 편이 빠릅니다</figcaption>
+  </figure>
+  <div class="note">
+    <b>무슨 권한인가요?</b> <code>drive.readonly</code>는 Drive 파일을 <b>읽기만</b> 하는 권한입니다(수정·삭제 불가). <code>drive.appdata</code>는 Drive 안의 숨김
+    "앱 데이터" 폴더 하나만 쓰는 권한으로, 동기화 파일 <code>elviewer-sync.json</code>이 여기에 저장됩니다. 범위를 저장할 때 "민감한/제한된 범위" 안내가 나와도 그대로 저장하면 됩니다.
+  </div>
+
+  <h3>4-2. 테스트 사용자 → 앱 게시</h3>
+  <ol class="do">
+    <li>(선택) 왼쪽 <b class="ui">대상</b> → <b>테스트 사용자</b>의 <b class="ui">+ Add users</b>에 본인 계정을 넣어 두면 게시 전에 먼저 시험해 볼 수 있습니다. 게시 후에는 테스트 사용자 목록과 상관없이 <b>누구나</b> 로그인할 수 있습니다.</li>
+    <li>같은 화면 위쪽 <b>게시 상태</b>의 <b class="ui">앱 게시</b> → 확인. 상태가 <b>"프로덕션"</b>으로 바뀌면 완료입니다.</li>
+  </ol>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/auth/audience</span></div>
+      <div class="body">
+        <div class="side">
+          <div class="h">Google 인증 플랫폼</div>
+          <div class="it">개요</div>
+          <div class="it">브랜딩</div>
+          <div class="it on">대상</div>
+          <div class="it">클라이언트</div>
+          <div class="it">데이터 액세스</div>
+        </div>
+        <div class="main">
+          <div class="title">대상</div>
+          <div class="card2">
+            <div class="muted">게시 상태</div>
+            <div class="row"><b>테스트 중</b><span class="fbtn hl" data-n="2">앱 게시</span></div>
+            <div class="muted">사용자 유형: 외부</div>
+          </div>
+          <div class="card2">
+            <div class="row" style="justify-content:space-between"><b>테스트 사용자</b><span class="fbtn hl" data-n="1">+ Add users</span></div>
+            <div class="muted">me@gmail.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <figcaption>테스트 사용자를 먼저 넣고, 그다음 "앱 게시"</figcaption>
+  </figure>
+  <div class="warn">
+    <b>왜 게시하나요?</b> "테스트 중" 상태에서는 PC 로그인이 <b>7일마다 만료</b>되어 매주 다시 로그인해야 합니다. "프로덕션"으로 게시하면 만료되지 않습니다.
+    Google 심사를 받지 않은 앱이라 유저마다 첫 로그인 때 "확인되지 않은 앱" 경고가 한 번 나오고, 최대 100명까지 쓸 수 있습니다(7단계 참고).
+    게시할 때 "확인 필요" 안내가 떠도 확인을 눌러 게시하면 됩니다.
+  </div>
+  <label class="check"><input type="checkbox"> 범위 2개 저장, 앱 게시(프로덕션)까지 했습니다</label>
+</section>
+
+<!-- ============================================================ 5 -->
+<section class="step" id="s5" data-step="5">
+  <h2><span class="num">5</span>PC용 클라이언트 만들기 + JSON 넣기</h2>
+  <div class="meta">약 3분 · PC 앱이 브라우저로 로그인할 때 쓰는 열쇠입니다</div>
+  <ol class="do">
+    <li>왼쪽 <b class="ui">클라이언트</b>(옛 화면: <b class="ui">사용자 인증 정보</b> → <b class="ui">+ 사용자 인증 정보 만들기</b> → <b class="ui">OAuth 클라이언트 ID</b>) → <b class="ui">+ 클라이언트 만들기</b>.</li>
+    <li>애플리케이션 유형 <b class="ui">데스크톱 앱</b>, 이름 <code>ELviewer PC</code> → <b class="ui">만들기</b>.</li>
+    <li>완료 창에서 <b class="ui">JSON 다운로드</b>. (창을 닫았다면 클라이언트 목록에서 ELviewer PC 오른쪽의 다운로드 아이콘)</li>
+  </ol>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/auth/clients/create</span></div>
+      <div class="body">
+        <div class="side">
+          <div class="h">Google 인증 플랫폼</div>
+          <div class="it">개요</div>
+          <div class="it">브랜딩</div>
+          <div class="it">대상</div>
+          <div class="it on">클라이언트</div>
+          <div class="it">데이터 액세스</div>
+        </div>
+        <div class="main">
+          <div class="title">OAuth 클라이언트 ID 만들기</div>
+          <div class="field"><label>애플리케이션 유형 *</label><div class="input sel hl" data-n="1">데스크톱 앱</div></div>
+          <div class="field"><label>이름 *</label><div class="input hl" data-n="2">ELviewer PC</div></div>
+          <div class="row"><span class="fbtn primary hl" data-n="3">만들기</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>유형은 꼭 "데스크톱 앱" (웹 애플리케이션 아님)</figcaption>
+  </figure>
+  <figure class="shot">
+    <div class="win">
+      <div class="dim">
+        <div class="dialog">
+          <b>OAuth 클라이언트 생성됨</b>
+          <div class="field"><label>클라이언트 ID</label><div class="input muted">1234…apps.googleusercontent.com</div></div>
+          <div class="field"><label>클라이언트 보안 비밀번호</label><div class="input muted">GOCSPX-••••••••</div></div>
+          <div class="row"><span class="fbtn hl" data-n="4">⤓ JSON 다운로드</span><span style="flex:1"></span><span class="fbtn">확인</span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>받은 파일 이름은 client_secret_….json 형태입니다</figcaption>
+  </figure>
+  <ol class="do" start="4">
+    <li>받은 파일 이름을 <code>google_oauth.json</code>으로 바꿔 아래 위치에 넣습니다. <code>ELviewer</code> 폴더 바로 아래에 둬도 됩니다.</li>
+  </ol>
+<pre class="tree">C:\Projects\novelCloud\ELviewer\
+└─ src-tauri\
+   ├─ Cargo.toml
+   ├─ tauri.conf.json
+   └─ <span class="new">google_oauth.json   ← 여기 (git에는 올라가지 않음)</span></pre>
+  <div class="copy"><code>C:\Projects\novelCloud\ELviewer\src-tauri\google_oauth.json</code><button type="button" data-copy="C:\Projects\novelCloud\ELviewer\src-tauri\google_oauth.json">경로 복사</button></div>
+  <div class="note">
+    파일을 넣은 뒤 PC 앱을 다시 빌드해야 적용됩니다. Claude에게 <b>"google_oauth.json 넣었어"</b>라고 알려주시면 다시 빌드하고 확인합니다.
+    직접 하려면 <code>ELviewer</code> 폴더에서 <code>npx tauri build</code>.
+  </div>
+  <div class="warn">이 JSON의 보안 비밀번호는 다른 사람과 공유하지 마세요. 실수로 공개됐다면 클라이언트 목록에서 비밀번호를 재설정하면 됩니다.</div>
+  <label class="check"><input type="checkbox"> 데스크톱 클라이언트를 만들고 google_oauth.json을 src-tauri 폴더에 넣었습니다</label>
+</section>
+
+<!-- ============================================================ 6 -->
+<section class="step" id="s6" data-step="6">
+  <h2><span class="num">6</span>Android용 클라이언트 만들기</h2>
+  <div class="meta">약 3분 · 휴대폰 앱은 비밀번호 대신 "패키지 이름 + 서명 지문"으로 알아봅니다. 앱을 다시 빌드할 필요는 없습니다</div>
+  <ol class="do">
+    <li><b class="ui">클라이언트</b> → <b class="ui">+ 클라이언트 만들기</b> → 애플리케이션 유형 <b class="ui">Android</b>.</li>
+    <li>이름 <code>ELviewer Android</code>, 패키지 이름과 SHA-1 인증서 지문을 아래 값으로 입력 → <b class="ui">만들기</b>.</li>
+    <li>디버그 빌드로도 테스트할 계획이면 같은 방법으로 클라이언트를 하나 더 만들고 디버그 SHA-1을 넣습니다.</li>
+  </ol>
+  <table>
+    <tr><th>항목</th><th>값</th></tr>
+    <tr><td>패키지 이름</td><td><div class="copy"><code>com.elviewer.app</code><button type="button" data-copy="com.elviewer.app">복사</button></div></td></tr>
+    <tr><td>SHA-1 · 릴리스<br><span class="muted">release 폴더의 APK</span></td><td><div class="copy"><code>CD:00:48:A0:28:E5:12:C1:8A:B2:CE:AE:3D:9A:52:BB:10:45:EA:69</code><button type="button" data-copy="CD:00:48:A0:28:E5:12:C1:8A:B2:CE:AE:3D:9A:52:BB:10:45:EA:69">복사</button></div></td></tr>
+    <tr><td>SHA-1 · 디버그<br><span class="muted">개발용 빌드</span></td><td><div class="copy"><code>A5:36:B2:72:56:80:F8:D9:03:44:2D:CC:A9:D4:B2:F9:24:AD:B2:A1</code><button type="button" data-copy="A5:36:B2:72:56:80:F8:D9:03:44:2D:CC:A9:D4:B2:F9:24:AD:B2:A1">복사</button></div></td></tr>
+  </table>
+  <figure class="shot">
+    <div class="win">
+      <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">console.cloud.google.com/auth/clients/create</span></div>
+      <div class="main">
+        <div class="title">OAuth 클라이언트 ID 만들기</div>
+        <div class="field"><label>애플리케이션 유형 *</label><div class="input sel hl" data-n="1">Android</div></div>
+        <div class="field"><label>이름 *</label><div class="input">ELviewer Android</div></div>
+        <div class="field"><label>패키지 이름 *</label><div class="input hl" data-n="2">com.elviewer.app</div></div>
+        <div class="field"><label>SHA-1 인증서 디지털 지문 *</label><div class="input hl" data-n="3">CD:00:48:A0:28:E5:12:C1:8A:B2:CE:AE:3D:9A:52:BB:10:45:EA:69</div></div>
+        <div class="muted">맞춤 URI 스키마 사용 설정 등 고급 설정은 건드리지 않습니다.</div>
+        <div class="row" style="margin-top:8px"><span class="fbtn primary hl" data-n="4">만들기</span></div>
+      </div>
+    </div>
+    <figcaption>Android 클라이언트에는 다운로드할 파일이 없습니다. 만들기만 하면 끝입니다</figcaption>
+  </figure>
+  <div class="note">
+    등록 후 적용까지 몇 분 걸릴 수 있습니다. 나중에 Play 스토어로 배포하면 Play Console → <b>앱 무결성</b> → <b>앱 서명 키</b>의 SHA-1로 클라이언트를 하나 더 만들어야 합니다.
+  </div>
+  <label class="check"><input type="checkbox"> Android 클라이언트(릴리스 SHA-1)를 만들었습니다</label>
+</section>
+
+<!-- ============================================================ 7 -->
+<section class="step" id="s7" data-step="7">
+  <h2><span class="num">7</span>ELviewer에서 연결하기 (유저가 하는 부분)</h2>
+  <div class="meta">앱을 쓰는 사람마다 각자 자기 계정으로 합니다 · PC 앱은 5단계의 JSON을 넣고 다시 빌드한 버전이어야 합니다</div>
+  <ol class="do">
+    <li>서재 왼쪽 아래(휴대폰은 ☰ 메뉴 아래) <b class="ui">Google 계정 연결</b>.</li>
+    <li><b>PC</b>: 브라우저가 열립니다 → 계정 선택 → 경고 화면 → 권한 허용 → "ELviewer에 Google Drive가 연결되었습니다" 페이지가 나오면 브라우저를 닫습니다.<br>
+        <b>휴대폰</b>: 계정 선택 → 권한 허용 창이 앱 위에 뜹니다.</li>
+    <li><b class="ui">Drive 폴더 추가</b>로 소설 폴더를 고르면 서재에 ☁ 표시로 들어옵니다.</li>
+  </ol>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <figure class="shot" style="flex:1 1 280px">
+      <div class="win">
+        <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">accounts.google.com</span></div>
+        <div class="main">
+          <div style="font-size:18px;margin-bottom:6px">⚠ Google에서 확인하지 않은 앱</div>
+          <div class="muted">앱에서 Google 계정의 민감한 정보에 대한 액세스를 요청합니다. 개발자가 Google에 앱 확인을 요청하기 전에는 앱을 사용하지 마세요.</div>
+          <div class="row" style="margin-top:10px"><span class="fbtn hl" data-n="1">고급</span><span style="flex:1"></span><span class="fbtn primary">안전한 페이지로 돌아가기</span></div>
+          <div class="row"><span class="hl" data-n="2" style="color:var(--shot-blue);text-decoration:underline;padding:2px 4px">ELviewer(으)로 이동(안전하지 않음)</span></div>
+        </div>
+      </div>
+      <figcaption>직접 만든 앱이라 나오는 경고입니다. 고급 → ELviewer(으)로 이동</figcaption>
+    </figure>
+    <figure class="shot" style="flex:1 1 280px">
+      <div class="win">
+        <div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">accounts.google.com</span></div>
+        <div class="main">
+          <div style="font-size:16px;margin-bottom:6px"><b>ELviewer</b>에서 다음 작업을 하려고 합니다</div>
+          <div class="cb on"><i></i><div>Google Drive 파일 보기 및 다운로드</div></div>
+          <div class="cb on"><i></i><div>Google Drive의 앱 구성 데이터 보기 및 관리</div></div>
+          <div class="row" style="margin-top:10px"><span style="flex:1"></span><span class="fbtn">취소</span><span class="fbtn primary hl" data-n="3">계속</span></div>
+        </div>
+      </div>
+      <figcaption>두 권한 모두 체크된 상태로 계속</figcaption>
+    </figure>
+  </div>
+  <figure class="shot">
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div class="elv">
+        <div class="box">
+          <b>☁ Google Drive</b>
+          <div class="sub">Drive 폴더의 소설을 읽고, 읽은 위치·책갈피·하이라이트를 PC와 휴대폰에서 동기화합니다.</div>
+          <span class="b hl" data-n="1" style="background:#30333a">Google 계정 연결</span>
+        </div>
+      </div>
+      <div class="elv">
+        <div class="box">
+          <b>☁ me@gmail.com</b>
+          <div class="sub">마지막 동기화: 방금</div>
+          <span class="b" style="background:#30333a">⟳ 동기화</span>
+          <span class="b hl" data-n="2" style="background:#30333a">Drive 폴더 추가</span>
+        </div>
+      </div>
+    </div>
+    <figcaption>ELviewer 서재의 Google Drive 영역 – 연결 전 / 연결 후</figcaption>
+  </figure>
+  <label class="check"><input type="checkbox"> PC와 휴대폰 모두 연결했고 Drive 폴더를 추가했습니다</label>
+</section>
+
+<!-- ============================================================ FAQ -->
+<section class="step" id="faq">
+  <h2>문제 해결</h2>
+  <table>
+    <tr><th style="width:40%">이런 메시지가 나오면</th><th>원인과 해결</th></tr>
+    <tr><td>PC: "이 빌드에는 Google 로그인 설정이 없습니다"</td><td><code>google_oauth.json</code> 없이 빌드된 앱입니다. 5단계 파일을 넣고 다시 빌드하세요.</td></tr>
+    <tr><td>휴대폰: "Google Cloud에 이 앱이 등록되지 않았습니다"</td><td>6단계의 패키지 이름 또는 SHA-1이 설치한 APK와 다릅니다. 릴리스 APK면 릴리스 SHA-1, 디버그 빌드면 디버그 SHA-1. 등록 직후라면 몇 분 기다렸다가 다시 시도하세요.</td></tr>
+    <tr><td>"액세스 차단됨: ELviewer가 Google 인증 절차를 완료하지 않았습니다" / <code>access_denied</code></td><td>앱이 아직 "테스트 중"인데 로그인한 계정이 테스트 사용자가 아닙니다. 4-2단계에서 앱을 게시하세요.</td></tr>
+    <tr><td>"이 앱은 사용자 수 한도에 도달했습니다"</td><td>확인받지 않은 앱의 100명 한도를 넘었습니다. 더 받으려면 Google 앱 확인·보안 심사가 필요합니다.</td></tr>
+    <tr><td>PC에서 일주일쯤 지나 "다시 로그인해야 합니다"</td><td>게시 상태가 "테스트 중"입니다. 4-2단계의 <b>앱 게시</b>를 하고 한 번 다시 연결하세요.</td></tr>
+    <tr><td>Drive 폴더 추가 화면에 폴더가 안 보임</td><td>공유받은 폴더는 <b>공유 문서함</b> 탭에 있습니다. 또는 Drive 웹에서 그 폴더에 "바로가기 추가"로 내 드라이브에 넣어 두면 내 드라이브 쪽에서도 보입니다.</td></tr>
+    <tr><td>연결을 끊고 싶음</td><td>ELviewer의 <b>연결 해제</b>, 또는 Google 계정 → 보안 → <b>서드 파티 앱 및 서비스</b>에서 ELviewer 액세스 삭제. 동기화 파일은 Drive 설정 → 앱 관리 → ELviewer → 숨겨진 앱 데이터 삭제로 지울 수 있습니다.</td></tr>
+  </table>
+</section>
+
+<footer>ELviewer · Google Drive 연동 설정 가이드 · 그림은 이해를 돕기 위한 예시입니다</footer>
+</div>
+
+<script>
+  // Per-viewer convenience: remember ticked steps and the theme in this browser only.
+  const KEY = "elviewer-gcp-guide";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; } };
+  const save = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage unavailable */ } };
+  const state = load();
+  const steps = [...document.querySelectorAll("section.step[data-step]")];
+  const tocItems = [...document.querySelectorAll("#tocList li")];
+
+  function refresh() {
+    let done = 0;
+    steps.forEach((sec, i) => {
+      const on = !!(state.done || {})[sec.dataset.step];
+      sec.classList.toggle("done", on);
+      sec.querySelector(".check input").checked = on;
+      tocItems[i]?.classList.toggle("done", on);
+      if (on) done++;
+    });
+    document.getElementById("progressText").textContent = `${done} / ${steps.length} 완료`;
+    document.getElementById("progressBar").style.width = `${(done / steps.length) * 100}%`;
+  }
+  steps.forEach((sec) => {
+    sec.querySelector(".check input").addEventListener("change", (e) => {
+      state.done = { ...(state.done || {}), [sec.dataset.step]: e.target.checked };
+      save(state);
+      refresh();
+    });
+  });
+  refresh();
+
+  document.querySelectorAll("[data-copy]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      const text = b.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const t = document.createElement("textarea");
+        t.value = text;
+        document.body.append(t);
+        t.select();
+        document.execCommand("copy");
+        t.remove();
+      }
+      const old = b.textContent;
+      b.textContent = "복사됨 ✓";
+      setTimeout(() => (b.textContent = old), 1200);
+    });
+  });
+
+  const root = document.documentElement;
+  if (state.theme) root.dataset.theme = state.theme;
+  document.getElementById("themeBtn").addEventListener("click", () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    state.theme = root.dataset.theme;
+    save(state);
+  });
+</script>
+</body>
+</html>

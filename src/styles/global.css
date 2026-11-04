@@ -1,0 +1,594 @@
+/* ELviewer design tokens – "paper & ink" editorial system (see DESIGN.md).
+   Surfaces derive from the reading theme's --bg/--fg (set by App), so the whole
+   UI follows the theme; the brand colors come from the hourglass icon. */
+:root {
+  /* brand (icon) */
+  --el-navy: #1c2640;
+  --el-paper: #f3ead8;
+  --el-sand: #e8a23c;
+  --el-cap: #c9822a;
+
+  --bg: #171c29;
+  --fg: #dad3c4;
+  --muted: color-mix(in srgb, var(--fg) 58%, var(--bg));
+  --faint: color-mix(in srgb, var(--fg) 12%, var(--bg));
+  --panel: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  --panel-2: color-mix(in srgb, var(--fg) 9%, var(--bg));
+  --border: color-mix(in srgb, var(--fg) 13%, var(--bg));
+  --hairline: color-mix(in srgb, var(--fg) 9%, var(--bg));
+
+  /* accent: text / icons / active marks */
+  --accent: var(--el-sand);
+  /* accent: filled controls (primary button, badges) */
+  --accent-fill: var(--el-sand);
+  --accent-press: var(--el-cap);
+  --accent-fg: var(--el-navy);
+  --accent-soft: color-mix(in srgb, var(--el-sand) 16%, transparent);
+  /* progress fills, sliders, chart-like marks (non-text) */
+  --mark: var(--el-sand);
+  --danger: #e0705f;
+  --good: #7cb98a;
+
+  --ui-font: "EL Sans", "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+  /* headings use the same family as the UI: EL Sans, set heavier and tighter */
+  --display-font: var(--ui-font);
+
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --radius: var(--r-lg);
+
+  --shadow-pop: 0 12px 36px rgba(10, 12, 20, 0.28);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"],
+:root[data-theme="sepia"] {
+  color-scheme: light;
+  --accent: #9a5b12;
+  --mark: var(--el-cap);
+  --accent-soft: color-mix(in srgb, var(--el-sand) 22%, transparent);
+  --danger: #b4432f;
+  --good: #3e7d4e;
+  --shadow-pop: 0 12px 36px rgba(60, 44, 20, 0.14);
+}
+
+:root[data-theme="sepia"] {
+  --accent: #8f5410;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--ui-font);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+input[type="text"],
+input[type="search"],
+input[type="number"],
+select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  height: 36px;
+  padding: 0 12px;
+  outline: none;
+  user-select: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--el-sand) 35%, transparent);
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+  width: 100%;
+}
+
+input[type="color"] {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--fg) 35%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-md);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+  background: var(--panel-2);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn.primary {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: color-mix(in srgb, var(--accent-fill) 88%, var(--accent-press));
+}
+
+.btn.primary:active {
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn.ghost:hover {
+  background: var(--panel-2);
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  color: var(--fg);
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
+}
+
+.icon-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Loading: the brand hourglass, flipping */
+.spinner {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 2h14v2h-1.2c-.3 3-2.1 5.2-4.3 8 2.2 2.8 4 5 4.3 8H19v2H5v-2h1.2c.3-3 2.1-5.2 4.3-8C8.3 9.2 6.5 7 6.2 4H5V2zm3.3 2c.3 2.2 1.7 4 3.7 6.4 2-2.4 3.4-4.2 3.7-6.4H8.3zM12 13.6c-2 2.4-3.4 4.2-3.7 6.4h7.4c-.3-2.2-1.7-4-3.7-6.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 2h14v2h-1.2c-.3 3-2.1 5.2-4.3 8 2.2 2.8 4 5 4.3 8H19v2H5v-2h1.2c.3-3 2.1-5.2 4.3-8C8.3 9.2 6.5 7 6.2 4H5V2zm3.3 2c.3 2.2 1.7 4 3.7 6.4 2-2.4 3.4-4.2 3.7-6.4H8.3zM12 13.6c-2 2.4-3.4 4.2-3.7 6.4h7.4c-.3-2.2-1.7-4-3.7-6.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+  animation: hourglass 1.6s var(--ease) infinite;
+}
+
+@keyframes hourglass {
+  0%,
+  45% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+/* Editorial display voice */
+.display {
+  font-family: var(--display-font);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 100;
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.center {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+}
+
+kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+
+/* ---------- App shell: own title bar (desktop) + body ---------- */
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  /* fixed-position overlays (sheets, toasts, drawers) stay below the title bar */
+  contain: layout;
+}
+
+.titlebar {
+  flex: none;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  background: color-mix(in srgb, var(--fg) 3%, var(--bg));
+  border-bottom: 1px solid var(--hairline);
+  color: var(--fg);
+  font-size: 12.5px;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.titlebar.blurred {
+  color: var(--muted);
+}
+
+.tb-logo {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.tb-app {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tb-doc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.tb-doc::before {
+  content: "·";
+  margin-right: 8px;
+  opacity: 0.6;
+}
+
+.tb-controls {
+  margin-left: auto;
+  display: flex;
+  height: 100%;
+}
+
+.tb-btn {
+  width: 46px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  transition: background 0.12s, color 0.12s;
+}
+
+.tb-btn:hover {
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
+  color: var(--fg);
+}
+
+.tb-btn.close:hover {
+  background: #c94f43;
+  color: #fff;
+}
+
+.tb-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Launch screen: hourglass → stacked books ---------- */
+.splash {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--bg);
+  transition: opacity 0.38s var(--ease);
+  /* the icon's navy ink line; on dark themes it is drawn in paper instead */
+  --sp-ink: var(--el-paper);
+}
+
+:root[data-theme="light"] .splash,
+:root[data-theme="sepia"] .splash {
+  --sp-ink: var(--el-navy);
+}
+
+.splash.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-glass {
+  width: 156px;
+  height: 156px;
+  overflow: visible;
+}
+
+.splash .sp-ink {
+  stroke: var(--sp-ink);
+  stroke-width: 22;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.splash .b1 {
+  fill: var(--sp-ink);
+}
+
+.splash :is(.sp-drain, .sp-stream, .sp-book, .sp-cap) {
+  transform-box: fill-box;
+}
+
+.splash-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  animation: sp-name 0.6s 0.2s var(--ease) both;
+}
+
+/* sand surface sinks (the clip slides down) */
+.sp-drain {
+  animation: sp-drain 1.5s 0.25s cubic-bezier(0.45, 0, 0.6, 1) both;
+}
+
+.sp-stream {
+  transform-origin: 50% 0;
+  animation: sp-stream 1.55s 0.2s linear both;
+}
+
+.sp-book {
+  animation: sp-drop 0.5s cubic-bezier(0.3, 1.35, 0.5, 1) both;
+}
+
+.sp-book.b1 {
+  animation-delay: 0.6s;
+}
+
+.sp-book.b2 {
+  animation-delay: 1.15s;
+}
+
+.splash-glass {
+  animation: sp-in 0.45s var(--ease) both;
+}
+
+@keyframes sp-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes sp-name {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes sp-drain {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sp-stream {
+  0% {
+    transform: scaleY(0);
+    opacity: 1;
+  }
+  12% {
+    transform: scaleY(1);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+@keyframes sp-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-46px);
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.splash.still * {
+  animation: none !important;
+}
+
+.splash.still .sp-drain {
+  transform: translateY(100%);
+}
+
+.splash.still .sp-stream {
+  opacity: 0;
+}
+
+/* ---------- Window-proportional UI scale (desktop; set by App from the window size) ----------
+   Scales the interface – title bar, library, stats, reader toolbars and panels – but never
+   the reading text itself, whose size is the reader's own setting. */
+:root {
+  --ui-scale: 1;
+}
+
+.titlebar,
+.app-body > :not(.reader),
+.reader .chrome-top,
+.reader .chrome-bottom,
+.reader .panel {
+  zoom: var(--ui-scale);
+}
