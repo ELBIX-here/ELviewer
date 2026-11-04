@@ -26,6 +26,16 @@ import { formatAgo, formatPct } from "./lib/text";
 import { TitleBar } from "./components/TitleBar";
 import { Splash } from "./components/Splash";
 
+/** Relative luminance below the midpoint: light text / system icons belong on it. */
+function isDarkColor(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return true;
+  const n = parseInt(m[1], 16);
+  const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const l = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return l < 0.18;
+}
+
 export default function App() {
   const [current, setCurrent] = useState<Entry | null>(null);
   const [splash, setSplash] = useState(true);
@@ -85,6 +95,8 @@ function Main({ current, setCurrent }: { current: Entry | null; setCurrent: (e: 
     root.style.setProperty("--bg", bg);
     root.style.setProperty("--fg", fg);
     root.dataset.theme = settings.theme;
+    // Android: system bar icons and the window behind the page follow the theme.
+    (window as unknown as { ElBars?: { setTheme(bg: string, dark: boolean): void } }).ElBars?.setTheme(bg, isDarkColor(bg));
     // Remembered for the next launch so the first frame already has the right colors.
     try {
       localStorage.setItem("el-theme", JSON.stringify({ bg, fg, theme: settings.theme }));

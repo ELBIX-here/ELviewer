@@ -108,6 +108,8 @@ export interface Settings {
   textIndent: number;
   maxWidth: number;
   padding: number;
+  /** top/bottom margin of the reading area, px */
+  paddingY: number;
   textAlign: "left" | "justify";
   readMode: ReadMode;
   /** pages side by side in page mode; 0 = automatic (two on wide screens, e.g. an unfolded foldable) */

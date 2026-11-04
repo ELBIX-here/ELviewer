@@ -41,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   textIndent: 0,
   maxWidth: 820,
   padding: 48,
+  paddingY: 36,
   textAlign: "left",
   readMode: "scroll",
   columns: 1,
@@ -88,7 +89,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
     // Settings saved before EL Sans shipped point at the old default stack – move them over.
     if (stored.fontFamily && stored.fontFamily.startsWith('"Pretendard"')) stored.fontFamily = DEFAULT_FONT;
     // Phones: narrower margins and a slightly smaller default type size.
-    const base = document.documentElement.dataset.platform === "mobile" ? { ...DEFAULT_SETTINGS, padding: 18, fontSize: 18 } : DEFAULT_SETTINGS;
+    const base = document.documentElement.dataset.platform === "mobile" ? { ...DEFAULT_SETTINGS, padding: 18, paddingY: 16, fontSize: 18 } : DEFAULT_SETTINGS;
     set({ settings: { ...base, ...stored }, hydrated: true });
   },
   set: (patch) => {

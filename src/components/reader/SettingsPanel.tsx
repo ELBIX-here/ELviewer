@@ -292,6 +292,12 @@ export function SettingsPanel({ onClose, extra, scope }: { onClose: () => void; 
                 <Stepper value={s.padding} min={0} max={240} step={4} onChange={(v) => set({ padding: v })} fmt={(v) => `${v}px`} />
               </div>
             </div>
+            <div className="field">
+              <label>상하 여백</label>
+              <div className="ctl">
+                <Stepper value={s.paddingY} min={0} max={160} step={4} onChange={(v) => set({ paddingY: v })} fmt={(v) => `${v}px`} />
+              </div>
+            </div>
           </>
         )}
 

@@ -35,7 +35,6 @@ export interface TextViewProps {
   onSelectEnd?: () => void;
 }
 
-const TOP_PAD = 72;
 const BOTTOM_PAD = 120;
 
 
@@ -43,6 +42,8 @@ export const ScrollView = forwardRef<TextViewHandle, TextViewProps>(function Scr
   { doc, settings: s, initial, onPos, decos, tocParas, autoPlay, onToggleUi, interceptTap, onEnd, onDecoClick, onSelectEnd },
   ref,
 ) {
+  /** blank space above the first line (the "상하 여백" setting) */
+  const TOP_PAD = s.paddingY;
   const scrollRef = useRef<HTMLDivElement>(null);
   const innerWidthRef = useRef(600);
   const lastPosRef = useRef(initial);

@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.elviewer" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+        <!-- Shown before the page has painted: the default (dark) reading theme, so a
+             launch never flashes white. The page then sets the real theme color (ElBars). -->
+        <item name="android:windowBackground">@color/el_canvas</item>
     </style>
 </resources>

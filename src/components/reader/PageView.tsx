@@ -4,7 +4,6 @@ import { type TextViewHandle, type TextViewProps } from "./ScrollView";
 import { renderDecorated } from "../../lib/decorate";
 import { blockOf, effectiveColumns, pageBlocks } from "../../lib/layout";
 
-const PAD_Y = 64;
 
 interface Pending {
   para?: number;
@@ -40,6 +39,7 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
   const anchorRef = useRef<number | null>(null);
   const fadeKey = useRef(0);
 
+  const padY = s.paddingY;
   const gap = Math.max(24, s.padding);
   const columns = effectiveColumns(s.columns, vp.w, vp.h);
   const colW = columns === 2 ? Math.max(100, (size.w - gap) / 2) : size.w;
@@ -72,14 +72,14 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
       setVp((prev) => (prev.w === vw && prev.h === vh ? prev : { w: vw, h: vh }));
       const maxW = columns === 2 ? s.maxWidth * 2 : s.maxWidth;
       const w = Math.max(100, Math.min(maxW, el.clientWidth - s.padding * 2));
-      const h = Math.max(100, el.clientHeight - PAD_Y * 2);
+      const h = Math.max(100, el.clientHeight - padY * 2);
       setSize((prev) => (Math.abs(prev.w - w) < 1 && Math.abs(prev.h - h) < 1 ? prev : { w, h }));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [s.padding, s.maxWidth, columns]);
+  }, [s.padding, padY, s.maxWidth, columns]);
 
   // Any layout-affecting change should keep the current paragraph in view.
   const firstLayout = useRef(true);
@@ -286,7 +286,7 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
     <div
       className="page-viewport"
       ref={viewportRef}
-      style={{ padding: `${PAD_Y}px ${s.padding}px` }}
+      style={{ padding: `${padY}px ${s.padding}px` }}
       onMouseUp={() => onSelectEnd?.()}
       onClick={(e) => {
         const mark = (e.target as HTMLElement).closest("mark[data-hl]") as HTMLElement | null;

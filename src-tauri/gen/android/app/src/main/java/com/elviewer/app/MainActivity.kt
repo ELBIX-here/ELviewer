@@ -1,17 +1,21 @@
 package com.elviewer.app
 
 import android.app.Activity
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.provider.Settings
 import android.os.Bundle
 import android.view.KeyEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
@@ -43,8 +47,16 @@ class MainActivity : TauriActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    enableEdgeToEdge()
+    // Fully transparent system bars: the page paints behind them in the reading theme's
+    // color. (The default style lays a white scrim over the navigation bar whenever the
+    // phone is in light mode, which showed as a white strip under a dark page.)
+    val clear = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+    enableEdgeToEdge(statusBarStyle = clear, navigationBarStyle = clear)
     super.onCreate(savedInstanceState)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.isNavigationBarContrastEnforced = false
+      window.isStatusBarContrastEnforced = false
+    }
     consentLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
       val id = pendingAuthId ?: return@registerForActivityResult
       pendingAuthId = null
@@ -79,6 +91,26 @@ class MainActivity : TauriActivity() {
       @JavascriptInterface
       fun get(): String = insetsJson
     }, "ElInsets")
+
+    // The page's theme (App.tsx): system bar icons light on dark themes and dark on
+    // light ones, and the window behind the page in the theme color, so no strip of
+    // another color shows around the content.
+    webView.addJavascriptInterface(object {
+      @JavascriptInterface
+      fun setTheme(background: String, dark: Boolean) {
+        runOnUiThread {
+          val color = runCatching { Color.parseColor(background) }.getOrNull()
+          if (color != null) {
+            window.setBackgroundDrawable(ColorDrawable(color))
+            webView.setBackgroundColor(color)
+          }
+          WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+          }
+        }
+      }
+    }, "ElBars")
 
     // Shown to other devices as where a book was read: the name set in system settings
     // ("Galaxy S24"), else the model; tablets by their smallest screen width.
