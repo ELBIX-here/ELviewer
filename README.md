@@ -12,6 +12,8 @@ Tauri 2 + React 기반의 고성능 소설/전자책 뷰어 (Windows).
 | 이미지 폴더 | jpg, png, webp, avif, gif, bmp | 폴더 단위로 한 권처럼 취급 |
 | 압축 | zip, 7z | 압축을 풀지 않고 내부 파일을 직접 읽음 (`archive|member` 가상 경로) |
 
+읽어 주기(TTS): PC는 내장 신경망 음성(Supertonic 3, 오프라인), Android는 기기의 음성 엔진(삼성·Google TTS 등, `SystemTts.kt` ↔ `src/lib/systemTts.ts`).
+
 인코딩: BOM → UTF-16 휴리스틱 → chardetng 자동 감지 (한국어 우선). 파일별로 수동 지정 가능.
 
 ## 개발

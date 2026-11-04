@@ -140,6 +140,10 @@ export interface Settings {
   ttsGap: number;
   ttsVolume: number;
   ttsFollow: boolean;
+  /** Android: system TTS voice id ("" = the engine's Korean default) */
+  ttsSystemVoice: string;
+  /** Android: system TTS pitch, 1 = normal */
+  ttsPitch: number;
   /** display names for library roots whose id isn't a readable path (Android folder URIs) */
   rootLabels: Record<string, string>;
 }

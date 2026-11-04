@@ -20,7 +20,7 @@ pub fn status(_app: &AppHandle) -> TtsStatus {
     TtsStatus { installed: false, bundled: false, dir: None, download_bytes: 0, voices: vec![] }
 }
 
-const UNSUPPORTED: &str = "모바일에서는 아직 읽어 주기를 지원하지 않습니다";
+const UNSUPPORTED: &str = "모바일에서는 기기 음성 엔진으로 읽어 줍니다";
 
 pub fn download(_app: &AppHandle) -> Result<(), String> {
     Err(UNSUPPORTED.into())

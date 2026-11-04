@@ -58,8 +58,48 @@ function seedProgress() {
   localStorage.setItem(LS + "settings.json", JSON.stringify({ settings: { roots: [ROOT] } }));
 }
 
+/** `?platform=android`: a fake phone TTS engine that "speaks" each sentence for ~1.2 s. */
+function installFakeSystemTts() {
+  const emit = (detail: object) => window.dispatchEvent(new CustomEvent("eltts", { detail }));
+  let timers: number[] = [];
+  let at = 0;
+  (window as unknown as { ElTts: object }).ElTts = {
+    init: () => setTimeout(() => emit({ type: "ready" }), 300),
+    status: () =>
+      JSON.stringify({
+        ready: true,
+        engine: "com.samsung.SMT",
+        korean: true,
+        voices: [
+          { id: "ko-KR-SMTf00", lang: "ko-KR", network: false, quality: 400 },
+          { id: "ko-KR-SMTm00", lang: "ko-KR", network: false, quality: 400 },
+          { id: "ko-kr-x-kob-network", lang: "ko-KR", network: true, quality: 400 },
+        ],
+      }),
+    speak: (id: string, text: string, rate: number, _p: number, _v: string, _vol: number, gapMs: number, flush: boolean) => {
+      if (flush) {
+        timers.forEach(clearTimeout);
+        timers = [];
+        at = Date.now();
+      }
+      const len = Math.max(600, (text.length * 70) / rate);
+      at = Math.max(at, Date.now());
+      timers.push(window.setTimeout(() => emit({ type: "start", id }), at - Date.now()));
+      at += len;
+      timers.push(window.setTimeout(() => emit({ type: "done", id }), at - Date.now()));
+      at += gapMs;
+    },
+    stop: () => {
+      timers.forEach(clearTimeout);
+      timers = [];
+    },
+    openSettings: () => console.info("[mock] open TTS settings"),
+  };
+}
+
 export function installTauriMock() {
   seedProgress();
+  if (new URLSearchParams(location.search).get("platform") === "android") installFakeSystemTts();
   mockWindows("main");
   let rid = 1;
   mockIPC(

@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Page ↔ native bridges (ElTts, ElKeys, ElInsets, ElDevice, ElAuth): the WebView finds
+# these methods by name, so R8 must neither rename nor remove them.
+-keepattributes JavascriptInterface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}

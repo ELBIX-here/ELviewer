@@ -27,6 +27,7 @@ class MainActivity : TauriActivity() {
   /** Set by the reader (window.ElKeys.setVolumePaging) while a book is open and the setting is on. */
   @Volatile private var volumePaging = false
   private var webView: WebView? = null
+  private var systemTts: SystemTts? = null
   private var lastVolumeTurn = 0L
 
   /** Google consent screen for Drive access; the request id waiting for its result. */
@@ -104,6 +105,9 @@ class MainActivity : TauriActivity() {
       }
     }, "ElAuth")
 
+    // Read-aloud through the phone's text-to-speech engine (src/lib/systemTts.ts).
+    systemTts = SystemTts(this, webView).also { webView.addJavascriptInterface(it, "ElTts") }
+
     ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
       val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
       val d = view.resources.displayMetrics.density
@@ -112,6 +116,11 @@ class MainActivity : TauriActivity() {
       insets
     }
     webView.post { ViewCompat.requestApplyInsets(webView) }
+  }
+
+  override fun onDestroy() {
+    systemTts?.shutdown()
+    super.onDestroy()
   }
 
   /** Google Identity Services authorization: no client secret, the app is recognised by package name + signing key. */

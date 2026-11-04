@@ -64,6 +64,8 @@ export const DEFAULT_SETTINGS: Settings = {
   ttsGap: 0.25,
   ttsVolume: 1,
   ttsFollow: true,
+  ttsSystemVoice: "",
+  ttsPitch: 1,
   rootLabels: {},
 };
 

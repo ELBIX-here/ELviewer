@@ -2,11 +2,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 export interface TtsStatus {
+  /** "neural": desktop Supertonic model; "system": the phone's text-to-speech engine */
+  engine?: "neural" | "system";
   installed: boolean;
   bundled: boolean;
   dir: string | null;
   downloadBytes: number;
   voices: string[];
+  /** system engine: display names per voice id */
+  labels?: Record<string, string>;
+  /** system engine: Korean voice data is installed */
+  korean?: boolean;
 }
 
 export const VOICE_LABELS: Record<string, string> = {

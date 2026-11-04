@@ -17,7 +17,7 @@ import { PageView } from "./PageView";
 import { useAutoHide } from "./useAutoHide";
 import { useReadingTracker } from "./useReadingTracker";
 import { useReaderKeys } from "./useReaderKeys";
-import { useTextTts, useTtsSession } from "./useTextTts";
+import { ttsAvailable, useTextTts, useTtsSession } from "./useTextTts";
 import { TtsPanel } from "./TtsPanel";
 import { NoteEditor, NotesPanel, SelectionToolbar, notesToMarkdown } from "./NotesUi";
 import { stripExt } from "../../lib/sort";
@@ -493,7 +493,7 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
         }}
         settingsExtra={settingsExtra}
         settingsScope="text"
-        tts={isMobile() ? undefined : { playing: tts.isActive, onClick: onTtsButton }}
+        tts={ttsAvailable() ? { playing: tts.isActive, onClick: onTtsButton } : undefined}
         notesCount={highlights.length}
         customPanels={{
           tts: (
@@ -514,6 +514,7 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
               onDownload={tts.startDownload}
               onCancelDownload={tts.cancelDownload}
               onDeleteModel={tts.deleteModel}
+              onOpenSystemSettings={tts.openSystemSettings}
               onSleep={tts.setSleep}
             />
           ),

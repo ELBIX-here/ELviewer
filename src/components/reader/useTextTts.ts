@@ -3,6 +3,8 @@ import { create } from "zustand";
 import type { TextDoc } from "../../lib/text";
 import { splitSentences, type Sentence } from "../../lib/textPrep";
 import { TtsPlayer, ttsCancelDownload, ttsDelete, ttsDownload, ttsStatus, ttsUnload, type TtsStatus, type Utterance } from "../../lib/tts";
+import { SystemTtsPlayer, systemBridge, systemTtsStatus, systemVoiceLabels, type SystemTtsStatus } from "../../lib/systemTts";
+import { isAndroid } from "../../lib/platform";
 import { useSettings } from "../../store/settings";
 
 /** Survives the reader remounting when auto-advancing to the next file. */
@@ -12,6 +14,27 @@ export const useTtsSession = create<{ resumeOnOpen: boolean; set: (v: boolean) =
 }));
 
 export type TtsState = "playing" | "paused" | "stopped" | "loading";
+
+/** Android reads aloud with the phone's own TTS engine; the desktop with the neural model. */
+export function systemTts() {
+  return isAndroid() ? systemBridge() : null;
+}
+
+/** Whether read-aloud exists on this device at all. */
+export const ttsAvailable = () => !isAndroid() || systemBridge() != null;
+
+function fromSystem(s: SystemTtsStatus): TtsStatus {
+  return {
+    engine: "system",
+    installed: s.ready,
+    bundled: true,
+    dir: null,
+    downloadBytes: 0,
+    voices: s.voices.map((v) => v.id),
+    labels: systemVoiceLabels(s.voices),
+    korean: s.korean,
+  };
+}
 
 export function useTextTts(opts: {
   doc: TextDoc | null;
@@ -38,7 +61,7 @@ export function useTextTts(opts: {
   // sentence cursor: next sentence to hand to the player
   const cursor = useRef({ para: 0, idx: 0 });
   const cache = useRef(new Map<number, Sentence[]>());
-  const playerRef = useRef<TtsPlayer | null>(null);
+  const playerRef = useRef<TtsPlayer | SystemTtsPlayer | null>(null);
   /** sentence that is currently audible – used for prev/next sentence */
   const playingRef = useRef<Sentence | null>(null);
 
@@ -76,36 +99,37 @@ export function useTextTts(opts: {
   }, [opts.doc]);
 
   const refreshStatus = useCallback(() => {
-    ttsStatus()
-      .then(setStatus)
-      .catch((e) => setError(String(e)));
+    const sys = systemTts();
+    const p = sys ? systemTtsStatus(sys).then(fromSystem) : ttsStatus();
+    p.then(setStatus).catch((e) => setError(String(e)));
   }, []);
   useEffect(refreshStatus, [refreshStatus]);
 
   useEffect(() => {
-    const player = new TtsPlayer(
-      nextUtterance,
-      () => {
-        const s = settingsRef.current;
-        return { voice: s.ttsVoice, speed: s.ttsSpeed, steps: s.ttsSteps, gap: s.ttsGap, volume: s.ttsVolume };
+    const voiceOpts = () => {
+      const s = settingsRef.current;
+      return { voice: s.ttsVoice, speed: s.ttsSpeed, steps: s.ttsSteps, gap: s.ttsGap, volume: s.ttsVolume };
+    };
+    const events = {
+      start: (u: Utterance) => {
+        const s: Sentence = { para: u.para, start: u.start, end: u.end, text: u.text };
+        playingRef.current = s;
+        setCurrent(s);
+        setError(null);
+        if (settingsRef.current.ttsFollow) optsRef.current.ensureVisible(u.para);
       },
-      {
-        start: (u) => {
-          const s: Sentence = { para: u.para, start: u.start, end: u.end, text: u.text };
-          playingRef.current = s;
-          setCurrent(s);
-          setError(null);
-          if (settingsRef.current.ttsFollow) optsRef.current.ensureVisible(u.para);
-        },
-        end: () => {
-          playingRef.current = null;
-          setCurrent(null);
-          optsRef.current.onFinished();
-        },
-        error: (e) => setError(e),
-        state: setState,
+      end: () => {
+        playingRef.current = null;
+        setCurrent(null);
+        optsRef.current.onFinished();
       },
-    );
+      error: (e: string) => setError(e),
+      state: setState,
+    };
+    const sys = systemTts();
+    const player = sys
+      ? new SystemTtsPlayer(sys, nextUtterance, () => ({ ...voiceOpts(), voice: settingsRef.current.ttsSystemVoice, pitch: settingsRef.current.ttsPitch }), events)
+      : new TtsPlayer(nextUtterance, voiceOpts, events);
     playerRef.current = player;
     return () => {
       player.dispose();
@@ -114,7 +138,7 @@ export function useTextTts(opts: {
   }, [nextUtterance]);
 
   // Voice / speed / quality changes take effect from the current sentence.
-  const voiceKey = `${settings.ttsVoice}|${settings.ttsSpeed}|${settings.ttsSteps}`;
+  const voiceKey = `${settings.ttsVoice}|${settings.ttsSpeed}|${settings.ttsSteps}|${settings.ttsSystemVoice}|${settings.ttsPitch}`;
   const firstVoice = useRef(true);
   useEffect(() => {
     if (firstVoice.current) {
@@ -124,7 +148,13 @@ export function useTextTts(opts: {
     const p = playerRef.current;
     const cur = playingRef.current;
     if (p?.isPlaying && cur) {
-      cursor.current = { para: cur.para, idx: Math.max(0, sentencesOf(cur.para).findIndex((s) => s.start === cur.start)) };
+      cursor.current = {
+        para: cur.para,
+        idx: Math.max(
+          0,
+          sentencesOf(cur.para).findIndex((s) => s.start === cur.start),
+        ),
+      };
       p.restart();
     }
   }, [voiceKey, sentencesOf]);
@@ -228,7 +258,7 @@ export function useTextTts(opts: {
   }, [stop, refreshStatus]);
 
   // Free the ONNX sessions (~1 GB) when leaving the reader.
-  useEffect(() => () => void ttsUnload().catch(() => {}), []);
+  useEffect(() => () => void (systemTts() ? undefined : ttsUnload().catch(() => {})), []);
 
   return {
     status,
@@ -249,6 +279,7 @@ export function useTextTts(opts: {
     startDownload,
     cancelDownload: () => void ttsCancelDownload(),
     deleteModel,
+    openSystemSettings: () => systemTts()?.openSettings(),
     isActive: state !== "stopped",
   };
 }
