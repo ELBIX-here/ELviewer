@@ -35,12 +35,13 @@ export default function App() {
   const endSplash = useCallback(() => setSplash(false), []);
 
   // Desktop: the interface (not the reading text) scales with the window, so a small
-  // window doesn't feel cramped and a large one doesn't look sparse. 1200×780 = 100%.
+  // window doesn't feel cramped and a large one doesn't look sparse. 1200×780 = 100%,
+  // never below 90% so labels stay legible.
   useEffect(() => {
     if (isMobile()) return;
     const apply = () => {
       const s = Math.min(window.innerWidth / 1200, window.innerHeight / 780);
-      const v = Math.round(Math.min(1.2, Math.max(0.8, s)) * 20) / 20;
+      const v = Math.round(Math.min(1.2, Math.max(0.9, s)) * 20) / 20;
       document.documentElement.style.setProperty("--ui-scale", String(v));
     };
     apply();

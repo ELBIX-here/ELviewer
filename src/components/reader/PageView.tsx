@@ -2,10 +2,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import { paraAtOffset } from "../../lib/text";
 import { type TextViewHandle, type TextViewProps } from "./ScrollView";
 import { renderDecorated } from "../../lib/decorate";
-import { effectiveColumns } from "../../lib/layout";
+import { blockOf, effectiveColumns, pageBlocks } from "../../lib/layout";
 
-/** Paragraphs laid out per block. Only one block is in the DOM at a time. */
-const BLOCK = 200;
 const PAD_Y = 64;
 
 interface Pending {
@@ -19,8 +17,11 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
 ) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const blockCount = Math.max(1, Math.ceil(doc.paras.length / BLOCK));
-  const [block, setBlock] = useState(() => Math.min(blockCount - 1, Math.floor(initial.para / BLOCK)));
+  // Paragraphs are laid out one block at a time; blocks break at chapter headings so the
+  // short last page of a block is the end of a chapter, not a stray line mid-story.
+  const blocks = useMemo(() => pageBlocks(doc.paras.length, doc.toc.map((t) => t.para ?? 0)), [doc]);
+  const blockCount = blocks.length;
+  const [block, setBlock] = useState(() => blockOf(blocks, initial.para));
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -43,8 +44,8 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
   const columns = effectiveColumns(s.columns, vp.w, vp.h);
   const colW = columns === 2 ? Math.max(100, (size.w - gap) / 2) : size.w;
   const step = size.w + gap;
-  const blockStart = block * BLOCK;
-  const blockEnd = Math.min(doc.paras.length, blockStart + BLOCK);
+  const blockStart = blocks[Math.min(block, blockCount - 1)][0];
+  const blockEnd = Math.min(doc.paras.length, blocks[Math.min(block, blockCount - 1)][1]);
 
   const layoutKey = `${s.fontFamily}|${s.fontSize}|${s.lineHeight}|${s.letterSpacing}|${s.paragraphSpacing}|${s.textIndent}|${s.textAlign}|${columns}|${s.padding}|${s.maxWidth}`;
 
@@ -146,12 +147,12 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
     (para: number) => {
       para = Math.min(doc.paras.length - 1, Math.max(0, para));
       anchorRef.current = null;
-      const b = Math.floor(para / BLOCK);
+      const b = blockOf(blocks, para);
       pendingRef.current = { para };
       if (b !== block) setBlock(b);
       else setTick((t) => t + 1);
     },
-    [block, doc],
+    [block, blocks, doc],
   );
 
   /** Turns in quick succession (held key) skip the animation so pages keep up. */
@@ -188,10 +189,10 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
       setPage(p + 1);
     } else if (b < blockCount - 1) {
       switchingRef.current = true;
-      pendingRef.current = { para: (b + 1) * BLOCK };
+      pendingRef.current = { para: blocks[b + 1][0] };
       setBlock(b + 1);
     } else onEnd?.();
-  }, [blockCount, onEnd]);
+  }, [blocks, blockCount, onEnd]);
 
   const prev = useCallback(() => {
     anchorRef.current = null;
@@ -227,7 +228,7 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
       },
       home: () => goToPara(0),
       ensureVisible: (para) => {
-        const b = Math.floor(para / BLOCK);
+        const b = blockOf(blocks, para);
         if (b === block) {
           const target = paraPagesRef.current[para - blockStart];
           if (target === page || (target != null && target < page && (paraPagesRef.current[para - blockStart + 1] ?? pageCount) > page)) return;
@@ -247,7 +248,7 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
         else setTick((t) => t + 1);
       },
     }),
-    [goToPara, next, prev, doc, block, blockCount, blockStart, page, pageCount],
+    [goToPara, next, prev, doc, blocks, block, blockCount, blockStart, page, pageCount],
   );
 
   // Wheel → page flip (throttled).

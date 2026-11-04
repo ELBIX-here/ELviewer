@@ -42,12 +42,12 @@ export function TitleBar({ title }: { title?: string }) {
         </span>
       )}
       <div className="tb-controls">
-        <button className="tb-btn" title="최소화" aria-label="최소화" onClick={() => void win.minimize()}>
+        <button className="wc-btn" title="최소화" aria-label="최소화" onClick={() => void win.minimize()}>
           <svg viewBox="0 0 12 12">
             <path d="M2 6.5h8" />
           </svg>
         </button>
-        <button className="tb-btn" title={maximized ? "이전 크기로" : "최대화"} aria-label={maximized ? "이전 크기로" : "최대화"} onClick={() => void win.toggleMaximize()}>
+        <button className="wc-btn" title={maximized ? "이전 크기로" : "최대화"} aria-label={maximized ? "이전 크기로" : "최대화"} onClick={() => void win.toggleMaximize()}>
           {maximized ? (
             <svg viewBox="0 0 12 12">
               <rect x="2" y="3.5" width="6.5" height="6.5" rx="1.2" />
@@ -59,7 +59,7 @@ export function TitleBar({ title }: { title?: string }) {
             </svg>
           )}
         </button>
-        <button className="tb-btn close" title="닫기" aria-label="닫기" onClick={() => void win.close()}>
+        <button className="wc-btn close" title="닫기" aria-label="닫기" onClick={() => void win.close()}>
           <svg viewBox="0 0 12 12">
             <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
           </svg>

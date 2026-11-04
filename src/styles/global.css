@@ -366,7 +366,7 @@ kbd {
   background: color-mix(in srgb, var(--fg) 3%, var(--bg));
   border-bottom: 1px solid var(--hairline);
   color: var(--fg);
-  font-size: 12.5px;
+  font-size: 13px;
   user-select: none;
   transition: color 0.15s;
 }
@@ -406,7 +406,7 @@ kbd {
   height: 100%;
 }
 
-.tb-btn {
+.wc-btn {
   width: 46px;
   height: 100%;
   display: grid;
@@ -415,17 +415,17 @@ kbd {
   transition: background 0.12s, color 0.12s;
 }
 
-.tb-btn:hover {
+.wc-btn:hover {
   background: color-mix(in srgb, var(--fg) 9%, transparent);
   color: var(--fg);
 }
 
-.tb-btn.close:hover {
+.wc-btn.close:hover {
   background: #c94f43;
   color: #fff;
 }
 
-.tb-btn svg {
+.wc-btn svg {
   width: 12px;
   height: 12px;
   fill: none;
@@ -579,13 +579,12 @@ kbd {
 }
 
 /* ---------- Window-proportional UI scale (desktop; set by App from the window size) ----------
-   Scales the interface – title bar, library, stats, reader toolbars and panels – but never
-   the reading text itself, whose size is the reader's own setting. */
+   Scales the interface – library, stats, reader toolbars and panels – but never the reading
+   text itself (the reader's own setting) nor the title bar, which keeps a fixed size. */
 :root {
   --ui-scale: 1;
 }
 
-.titlebar,
 .app-body > :not(.reader),
 .reader .chrome-top,
 .reader .chrome-bottom,
