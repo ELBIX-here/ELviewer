@@ -1074,6 +1074,15 @@ mark.md-hr {
 mark.md-table {
   font-size: 0.95em;
 }
+/* HTML only: <u>/<ins>, <mark> */
+mark.md-u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+mark.md-mark {
+  background-color: color-mix(in srgb, var(--mark) 22%, transparent);
+  border-radius: 2px;
+}
 
 /* ---------- bottom bar: chapter, position, progress with chapter steps ---------- */
 .cb-info {

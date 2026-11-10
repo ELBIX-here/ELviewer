@@ -22,6 +22,7 @@ const ENTRIES: Entry[] = [
   file(ROOT, "북부 대공의 하녀.txt", 1_870_000, 1),
   file(ROOT, "시간을 거스르는 모래시계.txt", 960_000, 5),
   file(ROOT, "작업 메모.md", 12_000, 0),
+  file(ROOT, "웹소설 저장본.html", 48_000, 0),
 ];
 
 const PARA = [
@@ -32,6 +33,17 @@ const PARA = [
   "그는 대답 대신 모래시계를 뒤집었다. 시간은 다시 흐르기 시작했고, 이야기도 그랬다.",
 ];
 const SAMPLE = Array.from({ length: 400 }, (_, i) => PARA[i % PARA.length].replace("제 1화", `제 ${Math.floor(i / 5) + 1}화`)).join("\n\n");
+
+const SAMPLE_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>저장본</title><style>p{color:red}</style><script>var x = 1</script></head><body>
+<nav><a href="/">홈</a> | <a href="/list">목록</a></nav>
+${Array.from({ length: 12 }, (_, i) => `<h2>${i + 1}화 <em>모래의 서재</em></h2>
+<p>창밖으로 첫눈이 내리고 있었다. <strong>서재의 등불</strong>은 이미 반쯤 꺼져 있었고,<br>책상 위에는 <i>읽다 만 책</i> 한 권이 펼쳐져 있었다.</p>
+<blockquote><p>"시간은 흐르고, 지식은 쌓인다."</p></blockquote>
+<ul><li>모래시계</li><li>낡은 책 <code>No.${i + 1}</code><ol><li>표지</li><li>본문</li></ol></li></ul>
+<p><img src="x.png" alt="서재 삽화"></p>
+<table><tr><th>이름</th><td>모래</td><td>책</td></tr></table>
+<hr>`).join("\n")}
+</body></html>`;
 
 const LS = "elviewer-dev-store:";
 const stores = new Map<number, string>();
@@ -117,7 +129,7 @@ export function installTauriMock() {
         case "list_encodings":
           return [["auto", "자동"], ["utf-8", "UTF-8"], ["euc-kr", "EUC-KR (CP949)"]];
         case "read_text":
-          return textResponse(SAMPLE);
+          return textResponse(/\.html?$/i.test(String(a.id)) ? SAMPLE_HTML : SAMPLE);
         case "tts_status":
           return { installed: false, bundled: false, dir: null, downloadBytes: 380_000_000, voices: ["F1", "M1"] };
         case "gdrive_auth_available":

@@ -6,6 +6,7 @@ import { isMobile } from "../../lib/platform";
 import { buildDoc, formatPct, paraAtOffset, searchText, type TextDoc } from "../../lib/text";
 import { applyRules, reflow, type ReflowStats } from "../../lib/textPrep";
 import { isMarkdownExt, markdownToDoc } from "../../lib/markdown";
+import { htmlToDoc, isHtmlExt } from "../../lib/html";
 import { addDeco, highlightDecos, readSelection, searchDecos, type DecoMap, type TextRangeSel } from "../../lib/decorate";
 import { useSettings } from "../../store/settings";
 import { useProgress, NO_BOOKMARKS } from "../../store/progress";
@@ -100,11 +101,14 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
       setLoading(true);
       setError(null);
       try {
-        const res = await readText(entry.id, encodingOverride, entry.ext);
+        // HTML is converted here (headings, bold, lists → styles), so ask for the
+        // decoded source rather than the backend's plain-text extraction.
+        const html = isHtmlExt(entry.ext);
+        const res = await readText(entry.id, encodingOverride, html ? "txt" : entry.ext);
         const s = useSettings.getState().settings;
         const ruled = applyRules(res.text, s.replaceRules);
-        // Markdown: markup → styles, paragraphs already decided by the converter.
-        const md = isMarkdownExt(entry.ext) ? markdownToDoc(ruled.text) : null;
+        // Markdown / HTML: markup → styles, paragraphs already decided by the converter.
+        const md = html ? htmlToDoc(ruled.text) : isMarkdownExt(entry.ext) ? markdownToDoc(ruled.text) : null;
         const flowed = reflow(md ? md.text : ruled.text, md ? "off" : s.reflow);
         const d = buildDoc(flowed.text, md ? false : s.collapseBlank, res.encoding);
         if (md) {
