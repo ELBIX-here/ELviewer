@@ -1,5 +1,6 @@
 import type { TocItem } from "../types";
 import type { Deco, DecoMap } from "./decorate";
+import { imageText, tableText, type RichBlock, type RichMap, type TableRow } from "./rich";
 
 /**
  * Markdown → reader paragraphs. Not a full CommonMark renderer: novels written in
@@ -14,11 +15,14 @@ export interface MarkdownDoc {
   toc: TocItem[];
   /** paragraph index → styled ranges */
   styles: DecoMap;
+  /** paragraph index → picture or table drawn in place of the text */
+  blocks: RichMap;
 }
 
 interface Para {
   text: string;
   decos: Deco[];
+  block?: RichBlock;
 }
 
 const HEADING = /^ {0,3}(#{1,6})(?:\s+(.*?))?\s*#*\s*$/;
@@ -30,6 +34,8 @@ const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 const REF_DEF = /^ {0,3}\[[^\]]+\]:\s*\S+/;
 const WORD = /[\p{L}\p{N}]/u;
+/** a line that is only a picture: ![alt](src "title") */
+const IMAGE_LINE = /^ {0,3}!\[([^\]]*)\]\(\s*<?([^\s)>]+)>?(?:\s+["'(][^)]*)?\)\s*$/;
 
 // ---- inline -------------------------------------------------------------------
 
@@ -203,11 +209,32 @@ export function markdownToDoc(src: string): MarkdownDoc {
       continue;
     }
     if (REF_DEF.test(line)) continue;
+    const img = IMAGE_LINE.exec(line);
+    if (img) {
+      flush();
+      const alt = inline(img[1]).text.trim();
+      paras.push({ text: imageText(alt), decos: [], block: { kind: "img", src: img[2], alt } });
+      continue;
+    }
     if (TABLE_ROW.test(line)) {
       flush();
-      if (TABLE_RULE.test(line)) continue;
-      const cells = line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-      push(inline(cells.join("  ·  ")), "md-table");
+      // The whole run of table lines is one block; a row followed by the |---| line is a header.
+      const rows: TableRow[] = [];
+      for (; i < lines.length && TABLE_ROW.test(lines[i]); i++) {
+        if (TABLE_RULE.test(lines[i])) {
+          const last = rows[rows.length - 1];
+          if (last) last.head = last.cells.map(() => true);
+          continue;
+        }
+        const cells = lines[i]
+          .trim()
+          .replace(/^\||\|$/g, "")
+          .split(/(?<!\\)\|/)
+          .map((c) => inline(c.trim()).text);
+        rows.push({ cells, head: cells.map(() => false) });
+      }
+      i--;
+      if (rows.length) paras.push({ text: tableText(rows), decos: [], block: { kind: "table", rows } });
       continue;
     }
     const q = QUOTE.exec(line);
@@ -242,10 +269,12 @@ export function markdownToDoc(src: string): MarkdownDoc {
   flush();
 
   const styles: DecoMap = new Map();
+  const blocks: RichMap = new Map();
   paras.forEach((p, i) => {
     if (p.decos.length) styles.set(i, p.decos);
+    if (p.block) blocks.set(i, p.block);
   });
-  return { text: paras.map((p) => p.text.replace(/\n/g, " ")).join("\n"), toc, styles };
+  return { text: paras.map((p) => p.text.replace(/\n/g, " ")).join("\n"), toc, styles, blocks };
 }
 
 export const isMarkdownExt = (ext: string) => ext === "md" || ext === "markdown";

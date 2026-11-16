@@ -34,14 +34,20 @@ const PARA = [
 ];
 const SAMPLE = Array.from({ length: 400 }, (_, i) => PARA[i % PARA.length].replace("제 1화", `제 ${Math.floor(i / 5) + 1}화`)).join("\n\n");
 
+const SAMPLE_PICTURE =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#1c2640"/><path d="M268 80h104c0 40-30 56-44 76 14 20 44 36 44 76H268c0-40 30-56 44-76-14-20-44-36-44-76z" fill="none" stroke="#f3ead8" stroke-width="8"/><rect x="250" y="250" width="140" height="18" fill="#e8a23c"/><rect x="262" y="270" width="116" height="18" fill="#f3ead8"/></svg>`,
+  );
 const SAMPLE_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>저장본</title><style>p{color:red}</style><script>var x = 1</script></head><body>
 <nav><a href="/">홈</a> | <a href="/list">목록</a></nav>
 ${Array.from({ length: 12 }, (_, i) => `<h2>${i + 1}화 <em>모래의 서재</em></h2>
 <p>창밖으로 첫눈이 내리고 있었다. <strong>서재의 등불</strong>은 이미 반쯤 꺼져 있었고,<br>책상 위에는 <i>읽다 만 책</i> 한 권이 펼쳐져 있었다.</p>
 <blockquote><p>"시간은 흐르고, 지식은 쌓인다."</p></blockquote>
 <ul><li>모래시계</li><li>낡은 책 <code>No.${i + 1}</code><ol><li>표지</li><li>본문</li></ol></li></ul>
-<p><img src="x.png" alt="서재 삽화"></p>
-<table><tr><th>이름</th><td>모래</td><td>책</td></tr></table>
+<p><img src="${SAMPLE_PICTURE}" alt="서재 삽화"></p>
+<p><img src="삽화/없는그림.png" alt="없는 그림"></p>
+<table><thead><tr><th>이름</th><th>나이</th><th>소속</th></tr></thead><tbody><tr><td>서윤</td><td>17</td><td>모래 서재</td></tr><tr><td>도겸</td><td>19</td><td>북부 기사단</td></tr></tbody></table>
 <hr>`).join("\n")}
 </body></html>`;
 

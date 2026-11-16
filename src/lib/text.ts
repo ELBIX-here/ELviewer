@@ -1,5 +1,6 @@
 import type { SearchHit, TocItem } from "../types";
 import type { DecoMap } from "./decorate";
+import type { RichMap } from "./rich";
 
 export interface TextDoc {
   paras: string[];
@@ -10,6 +11,8 @@ export interface TextDoc {
   encoding: string;
   /** formatting kept from the source (Markdown headings, bold, …) */
   styles?: DecoMap;
+  /** pictures and tables drawn in place of their paragraph */
+  blocks?: RichMap;
 }
 
 /** Splits text into paragraphs. Optionally collapses runs of blank lines into one. */

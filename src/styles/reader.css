@@ -1074,6 +1074,71 @@ mark.md-hr {
 mark.md-table {
   font-size: 0.95em;
 }
+/* ---------- pictures and tables in Markdown / HTML (one paragraph each) ---------- */
+.rich-block {
+  margin: 0;
+  user-select: none;
+  text-indent: 0 !important;
+  break-inside: avoid;
+}
+.rich-fig {
+  margin: 0.4em 0;
+  text-align: center;
+}
+.rich-fig img {
+  display: block;
+  max-width: 100%;
+  max-height: 80vh;
+  margin: 0 auto;
+  border-radius: var(--r-sm, 6px);
+}
+/* page mode: a picture never runs past one page (room left for the caption) */
+.page-content .rich-fig img {
+  max-height: calc(var(--page-h, 80vh) - 4em);
+}
+.rich-fig.loading {
+  min-height: 8em;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  border-radius: var(--r-sm, 6px);
+}
+.rich-fig figcaption {
+  margin-top: 0.4em;
+  font-size: 0.82em;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--fg) 58%, transparent);
+}
+.rich-missing {
+  margin: 0.4em 0;
+  padding: 0.5em 0.8em;
+  font-size: 0.85em;
+  text-align: center;
+  color: color-mix(in srgb, var(--fg) 50%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--fg) 22%, transparent);
+  border-radius: var(--r-sm, 6px);
+}
+.rich-table-wrap {
+  overflow-x: auto;
+  margin: 0.4em 0;
+}
+.rich-table {
+  border-collapse: collapse;
+  margin: 0 auto;
+  font-size: 0.9em;
+  line-height: 1.5;
+  white-space: normal;
+}
+.rich-table th,
+.rich-table td {
+  padding: 0.35em 0.8em;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
+}
+.rich-table th {
+  font-weight: 700;
+  border-bottom-color: color-mix(in srgb, var(--fg) 32%, transparent);
+}
+
 /* HTML only: <u>/<ins>, <mark> */
 mark.md-u {
   text-decoration: underline;

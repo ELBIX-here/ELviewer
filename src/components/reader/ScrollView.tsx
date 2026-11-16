@@ -4,6 +4,7 @@ import type { Settings } from "../../types";
 import type { TextDoc } from "../../lib/text";
 import { paraAtOffset } from "../../lib/text";
 import { renderDecorated, type DecoMap } from "../../lib/decorate";
+import { RichBlockView } from "./RichBlockView";
 
 export interface TextViewHandle {
   goTo: (para: number, frac?: number) => void;
@@ -68,6 +69,9 @@ export const ScrollView = forwardRef<TextViewHandle, TextViewProps>(function Scr
     (i: number) => {
       const len = doc.paras[i].length;
       const lineH = s.fontSize * s.lineHeight;
+      const rich = doc.blocks?.get(i);
+      if (rich?.kind === "img") return Math.min(innerWidthRef.current * 0.6, window.innerHeight * 0.8) + lineH * 2;
+      if (rich?.kind === "table") return rich.rows.length * s.fontSize * 2 + lineH;
       if (len === 0) return s.fontSize * 0.6 + s.fontSize * s.paragraphSpacing;
       const charsPerLine = Math.max(8, Math.floor(innerWidthRef.current / (s.fontSize * 0.92)));
       const lines = Math.max(1, Math.ceil(len / charsPerLine));
@@ -85,6 +89,24 @@ export const ScrollView = forwardRef<TextViewHandle, TextViewProps>(function Scr
     paddingEnd: BOTTOM_PAD,
     getItemKey: (i) => i,
   });
+
+  // A picture that finishes loading changes its row's height: measure that row again.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !doc.blocks?.size) return;
+    const remeasure = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName !== "IMG") return;
+      const row = t.closest<HTMLElement>("[data-index]");
+      if (row) virt.measureElement(row);
+    };
+    el.addEventListener("load", remeasure, true);
+    el.addEventListener("error", remeasure, true);
+    return () => {
+      el.removeEventListener("load", remeasure, true);
+      el.removeEventListener("error", remeasure, true);
+    };
+  }, [doc, virt]);
 
   // Scroll to a paragraph, then correct for measurement drift over a few frames.
   const scrollToPara = useCallback(
@@ -297,6 +319,19 @@ export const ScrollView = forwardRef<TextViewHandle, TextViewProps>(function Scr
       <div className="scroll-inner" style={{ height: virt.getTotalSize(), maxWidth: s.maxWidth, padding: `0 ${s.padding}px` }}>
         {items.map((item) => {
           const text = doc.paras[item.index];
+          const rich = doc.blocks?.get(item.index);
+          if (rich)
+            return (
+              <div
+                key={item.key}
+                data-index={item.index}
+                ref={virt.measureElement}
+                className="para rich-block"
+                style={{ ...paraStyle, transform: `translateY(${item.start}px)`, paddingLeft: s.padding, paddingRight: s.padding }}
+              >
+                <RichBlockView block={rich} />
+              </div>
+            );
           return (
             <p
               key={item.key}

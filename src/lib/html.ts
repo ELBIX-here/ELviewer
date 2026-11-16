@@ -1,6 +1,7 @@
 import type { TocItem } from "../types";
 import type { Deco, DecoMap } from "./decorate";
 import type { MarkdownDoc } from "./markdown";
+import { imageText, tableText, type RichBlock, type RichMap, type TableRow } from "./rich";
 
 /**
  * HTML → reader paragraphs, the same shape the Markdown converter produces: the
@@ -14,7 +15,7 @@ import type { MarkdownDoc } from "./markdown";
  */
 export function htmlToDoc(src: string, parser: { parseFromString(s: string, type: "text/html"): Document } = new DOMParser()): MarkdownDoc {
   const dom = parser.parseFromString(src, "text/html");
-  const paras: { text: string; decos: Deco[] }[] = [];
+  const paras: { text: string; decos: Deco[]; block?: RichBlock }[] = [];
   const toc: TocItem[] = [];
 
   // The paragraph being filled.
@@ -108,9 +109,22 @@ export function htmlToDoc(src: string, parser: { parseFromString(s: string, type
 
     if (tag === "br") return flush(ctx);
     if (tag === "img") {
-      const alt = (el.getAttribute("alt") ?? "").trim();
-      append(alt ? ` [그림: ${alt}] ` : " [그림] ", ctx);
+      const alt = (el.getAttribute("alt") ?? "").replace(/\s+/g, " ").trim();
+      const src = el.getAttribute("src") ?? el.getAttribute("data-src") ?? "";
+      if (!src) return append(` ${imageText(alt)} `, ctx);
+      // A picture takes its own paragraph; text around it continues after it.
+      flush(ctx);
+      paras.push({ text: imageText(alt), decos: [], block: { kind: "img", src, alt } });
       return;
+    }
+    if (tag === "table") {
+      const rows = dataTable(el);
+      if (rows) {
+        flush(ctx);
+        paras.push({ text: tableText(rows), decos: [], block: { kind: "table", rows } });
+        return;
+      }
+      return block(ctx);
     }
     if (tag === "hr") {
       flush(ctx);
@@ -164,10 +178,43 @@ export function htmlToDoc(src: string, parser: { parseFromString(s: string, type
   // Only one heading (usually the page title) isn't a table of contents: let the
   // chapter detector look at the text instead.
   const styles: DecoMap = new Map();
+  const blocks: RichMap = new Map();
   paras.forEach((p, i) => {
     if (p.decos.length) styles.set(i, p.decos);
+    if (p.block) blocks.set(i, p.block);
   });
-  return { text: paras.map((p) => p.text.replace(/\n/g, " ")).join("\n"), toc: toc.length >= 2 ? toc : [], styles };
+  return { text: paras.map((p) => p.text.replace(/\n/g, " ")).join("\n"), toc: toc.length >= 2 ? toc : [], styles, blocks };
+}
+
+const LAYOUT_INSIDE = "table, p, div, ul, ol, blockquote, pre, h1, h2, h3, h4, h5, h6, section, article";
+
+/**
+ * The rows of a table that holds data. Old web pages lay out the whole page with
+ * tables (the novel sits in one big cell): those return null and are read as text.
+ */
+function dataTable(table: Element): TableRow[] | null {
+  const trs: Element[] = [];
+  for (const c of table.children) {
+    const t = c.tagName.toLowerCase();
+    if (t === "tr") trs.push(c);
+    else if (t === "thead" || t === "tbody" || t === "tfoot") for (const r of c.children) if (r.tagName.toLowerCase() === "tr") trs.push(r);
+  }
+  if (!trs.length || table.querySelector(LAYOUT_INSIDE)) return null;
+  const rows: TableRow[] = [];
+  for (const tr of trs) {
+    const cells: string[] = [];
+    const head: boolean[] = [];
+    for (const td of tr.children) {
+      const t = td.tagName.toLowerCase();
+      if (t !== "td" && t !== "th") continue;
+      const text = (td.textContent ?? "").replace(/\s+/g, " ").trim();
+      if (text.length > 400) return null;
+      cells.push(text);
+      head.push(t === "th");
+    }
+    if (cells.length) rows.push({ cells, head });
+  }
+  return rows.length && rows.some((r) => r.cells.some(Boolean)) ? rows : null;
 }
 
 function join(a: string, b: string) {

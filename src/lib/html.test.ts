@@ -44,11 +44,32 @@ describe("htmlToDoc", () => {
     expect(paras('<ul><li>가<ul><li>나</li></ul></li></ul><ol start="3"><li><p>다</p></li><li>라</li></ol>')).toEqual(["• 가", "　• 나", "3. 다", "4. 라"]);
   });
 
-  it("handles quotes, rules, images, tables and preformatted text", () => {
-    const doc = htmlToDoc('<blockquote><p>인용</p></blockquote><hr><p><img alt="지도"> 아래</p><table><tr><th>이름</th><td>값</td></tr></table><pre>a  b\n\nc</pre>');
-    expect(doc.text.split("\n")).toEqual(["인용", "* * *", "[그림: 지도] 아래", "이름  ·  값", "a  b", "c"]);
+  it("handles quotes, rules and preformatted text", () => {
+    const doc = htmlToDoc("<blockquote><p>인용</p></blockquote><hr><pre>a  b\n\nc</pre>");
+    expect(doc.text.split("\n")).toEqual(["인용", "* * *", "a  b", "c"]);
     expect(doc.styles.get(0)?.[0].cls).toBe("md-quote");
-    expect(doc.styles.get(3)?.[0].cls).toBe("md-table");
-    expect(doc.styles.get(4)?.[0].cls).toBe("md-code md-pre");
+    expect(doc.styles.get(2)?.[0].cls).toBe("md-code md-pre");
+  });
+
+  it("puts each picture in a paragraph of its own", () => {
+    const doc = htmlToDoc('<p>앞 <img src="img/a.png" alt="지도"> 뒤</p><p><img alt="주소 없음"></p>');
+    expect(doc.text.split("\n")).toEqual(["앞", "[그림: 지도]", "뒤", "[그림: 주소 없음]"]);
+    expect(doc.blocks.get(1)).toEqual({ kind: "img", src: "img/a.png", alt: "지도" });
+    expect(doc.blocks.has(3)).toBe(false);
+  });
+
+  it("keeps data tables as one block and reads layout tables as text", () => {
+    const doc = htmlToDoc("<table><thead><tr><th>이름</th><th>값</th></tr></thead><tbody><tr><td>모래</td><td>1</td></tr></tbody></table>");
+    expect(doc.text).toBe("이름 · 값 / 모래 · 1");
+    expect(doc.blocks.get(0)).toEqual({
+      kind: "table",
+      rows: [
+        { cells: ["이름", "값"], head: [true, true] },
+        { cells: ["모래", "1"], head: [false, false] },
+      ],
+    });
+    const layout = htmlToDoc("<table><tr><td><p>첫 문단</p><p>둘째 문단</p></td></tr></table>");
+    expect(layout.text.split("\n")).toEqual(["첫 문단", "둘째 문단"]);
+    expect(layout.blocks.size).toBe(0);
   });
 });

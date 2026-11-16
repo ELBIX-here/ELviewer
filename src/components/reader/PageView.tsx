@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import { paraAtOffset } from "../../lib/text";
 import { type TextViewHandle, type TextViewProps } from "./ScrollView";
 import { renderDecorated } from "../../lib/decorate";
+import { RichBlockView } from "./RichBlockView";
 import { blockOf, effectiveColumns, pageBlocks } from "../../lib/layout";
 
 
@@ -93,6 +94,29 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
     pendingRef.current = { para: anchorRef.current };
     setTick((t) => t + 1);
   }, [layoutKey, size.w, size.h]);
+
+  // Pictures arrive after the first layout and push text onward: count pages again,
+  // keeping the paragraph that is on screen.
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content || !doc.blocks?.size) return;
+    let frame = 0;
+    const relayout = (e: Event) => {
+      if ((e.target as HTMLElement).tagName !== "IMG") return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        pendingRef.current = { para: anchorRef.current ?? curParaRef.current };
+        setTick((t) => t + 1);
+      });
+    };
+    content.addEventListener("load", relayout, true);
+    content.addEventListener("error", relayout, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      content.removeEventListener("load", relayout, true);
+      content.removeEventListener("error", relayout, true);
+    };
+  }, [doc, block]);
 
   // Layout pass: count pages and map paragraphs → page.
   useLayoutEffect(() => {
@@ -328,11 +352,19 @@ export const PageView = forwardRef<TextViewHandle, TextViewProps>(function PageV
             height: size.h,
             columnWidth: colW,
             columnGap: gap,
+            ["--page-h" as string]: `${size.h}px`,
             transform: `translateX(${-page * step}px)`,
           }}
         >
           {doc.paras.slice(blockStart, blockEnd).map((text, i) => {
             const idx = blockStart + i;
+            const rich = doc.blocks?.get(idx);
+            if (rich)
+              return (
+                <div key={idx} data-index={idx} className="rich-block" style={paraStyle}>
+                  <RichBlockView block={rich} />
+                </div>
+              );
             return (
               <p key={idx} data-index={idx} className={`${text.length === 0 ? "blank" : ""} ${tocParas.has(idx) ? "toc-line" : ""}`} style={paraStyle}>
                 {renderDecorated(text, decos.get(idx))}

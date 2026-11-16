@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import type { Bookmark, Entry, Highlight, HighlightColor, ReplaceRule, SearchHit, TocItem } from "../../types";
-import { readText, listEncodings, saveTextAs } from "../../lib/tauri";
+import { readText, readBinary, listEncodings, saveTextAs } from "../../lib/tauri";
+import { makeImageLoader, type ImageLoader } from "../../lib/rich";
+import { ImageLoaderContext } from "./RichBlockView";
 import { isMobile } from "../../lib/platform";
 import { buildDoc, formatPct, paraAtOffset, searchText, type TextDoc } from "../../lib/text";
 import { applyRules, reflow, type ReflowStats } from "../../lib/textPrep";
@@ -70,6 +72,14 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
   const { update, addBookmark, removeBookmark } = useProgress();
   const rawHighlights = useNotes((st) => st.highlights[entry.id] ?? NO_HIGHLIGHTS);
   const notes = useNotes();
+  // Pictures in Markdown / HTML documents, found next to the document.
+  const [imageLoader, setImageLoader] = useState<ImageLoader | null>(null);
+  useEffect(() => {
+    const l = makeImageLoader(entry, useLibrary.getState().entries, readBinary);
+    setImageLoader(l);
+    return () => l.dispose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry.id]);
   const changed = useLibrary((st) => st.changed);
   const clearChanged = useLibrary((st) => st.clearChanged);
 
@@ -114,6 +124,7 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
         if (md) {
           if (md.toc.length) d.toc = md.toc;
           d.styles = md.styles;
+          if (md.blocks.size) d.blocks = md.blocks;
         }
         const prog = useProgress.getState().progress[entry.id];
         if (keepPos) {
@@ -433,13 +444,15 @@ export function TextReader({ entry, onBack, onPrevFile, onNextFile, nextName, su
 
   return (
     <div className={`reader ${ui.cursorHidden ? "hide-cursor" : ""}`} onPointerMove={ui.onPointerMove}>
-      {doc &&
-        !error &&
-        (settings.readMode === "scroll" ? (
-          <ScrollView key={`scroll-${entry.id}`} {...viewProps} initial={initialRef.current} />
-        ) : (
-          <PageView key={`page-${entry.id}`} {...viewProps} initial={{ para: initialRef.current.para, frac: 0 }} />
-        ))}
+      {doc && !error && (
+        <ImageLoaderContext.Provider value={imageLoader}>
+          {settings.readMode === "scroll" ? (
+            <ScrollView key={`scroll-${entry.id}`} {...viewProps} initial={initialRef.current} />
+          ) : (
+            <PageView key={`page-${entry.id}`} {...viewProps} initial={{ para: initialRef.current.para, frac: 0 }} />
+          )}
+        </ImageLoaderContext.Provider>
+      )}
       {loading && (
         <div className="loading-overlay">
           <div className="spinner" />
