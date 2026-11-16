@@ -46,3 +46,6 @@ fonts/dist/
 
 # Test coverage
 coverage/
+# spare / backup OAuth client files
+src-tauri/비상용.json
+client_secret*.json
