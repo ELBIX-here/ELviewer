@@ -20,4 +20,12 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
+      # The app bundles the TTS model (models/supertonic-3, ~400 MB, fetched with
+      # scripts/fetch_tts_model.mjs for release builds). Tests don't need it, but the
+      # build script checks the bundled paths exist: give it empty stand-ins.
+      - name: Stand-in TTS model files
+        shell: bash
+        run: |
+          mkdir -p models/supertonic-3/onnx models/supertonic-3/voice_styles
+          touch models/supertonic-3/LICENSE models/supertonic-3/onnx/ci-placeholder models/supertonic-3/voice_styles/ci-placeholder
       - run: npm run test:rust
