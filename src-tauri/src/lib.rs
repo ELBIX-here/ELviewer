@@ -320,9 +320,45 @@ async fn gdrive_disconnect(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// The file the app was started with ("Open with" in Explorer), until the UI takes it.
+#[derive(Default)]
+struct LaunchFile(std::sync::Mutex<Option<String>>);
+
+/// First non-flag argument that names an existing file, made absolute against `cwd`.
+fn file_arg<I: IntoIterator<Item = String>>(args: I, cwd: &Path) -> Option<String> {
+    args.into_iter().skip(1).filter(|a| !a.starts_with('-')).find_map(|a| {
+        let p = cwd.join(&a);
+        p.is_file().then(|| p.to_string_lossy().into_owned())
+    })
+}
+
+#[tauri::command]
+fn take_launch_file(state: State<'_, LaunchFile>) -> Option<String> {
+    state.0.lock().ok()?.take()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default()
+    let launch = LaunchFile::default();
+    #[cfg(desktop)]
+    if let Ok(cwd) = std::env::current_dir() {
+        *launch.0.lock().unwrap() = file_arg(std::env::args(), &cwd);
+    }
+    let builder = tauri::Builder::default();
+    // Desktop: opening another file while ELviewer runs reuses the open window.
+    // Registered first, as the plugin requires.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+        use tauri::{Emitter, Manager};
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.set_focus();
+        }
+        if let Some(path) = file_arg(argv, Path::new(&cwd)) {
+            let _ = app.emit("open-file", path);
+        }
+    }));
+    let builder = builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build());
@@ -333,6 +369,7 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
     builder
         .manage(watcher::WatchState::default())
+        .manage(launch)
         .invoke_handler(tauri::generate_handler![
             read_text,
             read_binary,
@@ -358,8 +395,32 @@ pub fn run() {
             gdrive_connect,
             gdrive_cancel_connect,
             gdrive_access_token,
-            gdrive_disconnect
+            gdrive_disconnect,
+            take_launch_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod launch_tests {
+    use super::file_arg;
+
+    #[test]
+    fn picks_the_first_existing_file_and_skips_flags() {
+        let dir = std::env::temp_dir().join("elviewer-launch-test");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("책 1.md"), "# hi").unwrap();
+        let args = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+
+        let got = file_arg(args(&["elviewer.exe", "--flag", "책 1.md"]), &dir).unwrap();
+        assert_eq!(std::path::Path::new(&got), dir.join("책 1.md"));
+        // An absolute path is kept as it is.
+        let abs = dir.join("책 1.md").to_string_lossy().into_owned();
+        assert_eq!(file_arg(args(&["elviewer.exe", &abs]), std::path::Path::new("C:\\")), Some(abs));
+        // Missing files, folders and a bare launch give nothing.
+        assert_eq!(file_arg(args(&["elviewer.exe", "없음.md"]), &dir), None);
+        assert_eq!(file_arg(args(&["elviewer.exe", "."]), &dir), None);
+        assert_eq!(file_arg(args(&["elviewer.exe"]), &dir), None);
+    }
 }

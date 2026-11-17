@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Entry } from "./types";
@@ -159,25 +160,43 @@ function Main({ current, setCurrent }: { current: Entry | null; setCurrent: (e: 
     };
   }, [scan, markChanged]);
 
+  // Opens a readable file straight from its path; false when it isn't one.
+  const openPath = useCallback(
+    (p: string) => {
+      const ext = (p.split(".").pop() ?? "").toLowerCase();
+      const kind = kindForExt(ext);
+      if (!kind || /\.(zip|7z)$/i.test(p)) return false;
+      setCurrent({ id: p, name: baseName(p), dir: p.slice(0, Math.max(0, p.lastIndexOf("\\"))), root: "", ext, kind, size: 0, mtime: Date.now(), inArchive: false });
+      return true;
+    },
+    [setCurrent],
+  );
+
   // Drag & drop: folders become roots, files open directly.
   useEffect(() => {
     if (isMobile()) return;
     const un = getCurrentWebview().onDragDropEvent((e) => {
       if (e.payload.type !== "drop") return;
       for (const p of e.payload.paths) {
-        const ext = (p.split(".").pop() ?? "").toLowerCase();
-        const kind = kindForExt(ext);
-        if (kind && !/\.(zip|7z)$/i.test(p)) {
-          setCurrent({ id: p, name: baseName(p), dir: p.slice(0, Math.max(0, p.lastIndexOf("\\"))), root: "", ext, kind, size: 0, mtime: Date.now(), inArchive: false });
-          return;
-        }
+        if (openPath(p)) return;
         addRoot(p);
       }
     });
     return () => {
       void un.then((f) => f());
     };
-  }, [addRoot]);
+  }, [addRoot, openPath]);
+
+  // "Open with" from Explorer: the file the app started with, then files sent to
+  // the running window by later launches.
+  useEffect(() => {
+    if (isMobile()) return;
+    void invoke<string | null>("take_launch_file").then((p) => p && openPath(p));
+    const un = listen<string>("open-file", (e) => openPath(e.payload));
+    return () => {
+      void un.then((f) => f());
+    };
+  }, [openPath]);
 
   // ---- Google Drive sync -------------------------------------------------------
   // Runs after library scans (so books can be matched), when the app is hidden or

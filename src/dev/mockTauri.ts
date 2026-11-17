@@ -131,6 +131,7 @@ export function installTauriMock() {
         case "scan_library":
           return ENTRIES;
         case "watch_roots":
+        case "take_launch_file":
           return null;
         case "list_encodings":
           return [["auto", "자동"], ["utf-8", "UTF-8"], ["euc-kr", "EUC-KR (CP949)"]];

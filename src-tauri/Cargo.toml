@@ -1,6 +1,6 @@
 [package]
 name = "elviewer"
-version = "0.2.2"
+version = "0.2.3"
 description = "ELviewer - high performance novel reader"
 authors = ["ELviewer"]
 edition = "2021"
@@ -59,6 +59,8 @@ getrandom = "0.3"
 form_urlencoded = "1"
 # Remembers the window size / position / maximized state between runs.
 tauri-plugin-window-state = "2"
+# A second launch (opening a file from Explorer) hands its file to the running window.
+tauri-plugin-single-instance = "2"
 
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-android-fs = "29"
