@@ -1,6 +1,6 @@
 [package]
 name = "elviewer"
-version = "0.2.3"
+version = "0.2.4"
 description = "ELviewer - high performance novel reader"
 authors = ["ELviewer"]
 edition = "2021"
